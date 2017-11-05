@@ -351,7 +351,7 @@ BootCode:
 	clrl %a0@(ioCompletion)
 	lea %pc@(DrvrName),%a1
 	movel %a1,%a0@(ioNamePtr)
-	moveb #3,%a0@(ioPermssn)
+	moveb #fsRdWrPerm,%a0@(ioPermssn)
 	clrl %a0@(ioMisc)
 	clrw %a0@(ioBuffer)
 	moveb %a2@(seSlot),%a0@(ioBuffer+2)
