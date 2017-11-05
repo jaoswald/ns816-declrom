@@ -3,34 +3,9 @@
 	NuBus Memory card declaration ROM.
 */
 
-
-	.macro sRsrcOffsetEntry entry_type, label
-	.long (\entry_type<<24) + ((\label-.) & 0xffffff)
-	.endm
-	.macro sRsrcWordEntry entry_type, word_data
-	.word \entry_type<<8
-	.word \word_data & 0xffff
-	.endm
-
-	SDeleteSRTRec=49
-	.macro _SlotManager
-	.short 0xA06E
-	.endm
-
-	true32b=1
-	false32b=0
-	.macro _SwapMMUMode
-	.short 0xA05D
-	.endm
-	
-	MMU32Bit=0xcb2 /* byte containing current MMU mode */
-	.macro _StripAddress
-	.short 0xA055
-	.endm
-
-	
-	
-EndOfList=0xff000000
+	.include "atrap.inc"
+	.include "globals.inc"
+	.include "declrom.inc"
 
 	/* sResource Directory */
 	.org 0x7dc
@@ -42,31 +17,6 @@ sRsrcDir:
 	sRsrcOffsetEntry 131, sRsrc131	
 	.long EndOfList
 
-	sRsrcType=1
-	sRsrcName=2
-	sRsrcIcon=3
-	sRsrcDrvrDir=4
-	sRsrcLoadRec=5
-	sRsrcBootRec=6
-	sRsrcFlags=7
-	sRsrcHWDevId=8
-	MinorBaseOS=10
-	MinorLength=11
-	MajorBaseOS=12
-	MajorLength=13
-	sRsrcCicn=15
-	sRsrcIcl8=16
-	sRsrcIcl4=17
-	sGammaDir=64
-
-	/* Board sResource ID numbers */
-	BoardId=32
-	PRAMInitData=33
-	PrimaryInit=34
-	STimeOut=35
-	VendorInfo=36
-	SecondaryInit=38
-	sRsrcVidNames=65
 	
 sRsrc1:	sRsrcOffsetEntry sRsrcType,RsrcType1
 	sRsrcOffsetEntry sRsrcName,RsrcName
@@ -75,13 +25,6 @@ sRsrc1:	sRsrcOffsetEntry sRsrcType,RsrcType1
 	sRsrcOffsetEntry PrimaryInit,PrimaryInit_
 	sRsrcOffsetEntry VendorInfo,VendorInfoRecord
 	.long EndOfList
-
-	/* VendorInfo ID Numbers */
-	VendorID=1
-	SerialNum=2
-	RevLevel=3
-	PartNum=4
-	Date=5
 	
 RsrcType1:	.long 0x00010000
 		.long 0x0
@@ -92,8 +35,6 @@ PRamInit:	.long 12 /* data length */
 PrimaryInit_:	.long PrimaryInitEnd-.
 	.byte 2 /* Revision 2 */
 
-cpu68020=2
-	
 	.byte cpu68020
 	.byte 0,0 /* reserved */
 	.long PrimaryInitCode-.
@@ -102,19 +43,19 @@ cpu68020=2
 	.struct 0
 seBlock:
 seSlot: .space 1
-sesRsrcID: .space 1
+seRsrcID: .space 1
 seStatus: .space 2
 seFlags: .space 1
 seFiller0:	.space 1
 seFiller1:	.space 1
 seFiller2:	.space 1
-seResult:	.space 4
-seIOFileName:	.space 4
-seDevice:	.space 1
+seResult:	.space 4 /* 8 */
+seIOFileName:	.space 4 /* 12 */
+seDevice:	.space 1 /* 16 */
 sePartition:	.space 1
 seOSType:	.space 1
 seReserved:	.space 1
-seRefNum:	.space 1
+seRefNum:	.space 1 /* 20 */
 seNumDevices:	.space 1
 seBootState:	.space 1
 sePBlockLen=.-seBlock
@@ -198,8 +139,6 @@ L89E:
 	moveml %sp@+,%d2-%d7/%a3-%a4
 	rts
 
-	MMU32Bit=0xcb2 /* byte containing current MMU mode */
-	
 L8BC:	movel %sp@+,%d0
 	cmpib #0,MMU32Bit
 	bnes .LNoStrip
@@ -207,8 +146,6 @@ L8BC:	movel %sp@+,%d0
 .LNoStrip:	moveal %d0,%a0
 	jmp %a0@
 	
-	BusErrVector=8 /* MC68000 "Access Fault" vector */
-
 	/* d0, d6 contain previous MMUMode, d7 slot byte, a3&a0 at seblock */
 L8CC:	movew %sr,%sp@-  /* save interrupt mask */
 	oriw #0x700,%sr  /* disable interrupts */

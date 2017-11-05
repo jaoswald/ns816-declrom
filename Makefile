@@ -3,7 +3,7 @@ OBJCOPY=/usr/m68k-linux-gnu/bin/objcopy
 
 all: ns816rom.bin ns816rom.srec
 
-ns816rom.o: ns816rom.s
+ns816rom.o: ns816rom.s atrap.inc declrom.inc globals.inc
 	${AS}  -m68020 ns816rom.s -o ns816rom.o -a > ns816rom.l
 
 ns816rom.srec: ns816rom.o
