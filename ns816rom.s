@@ -803,7 +803,7 @@ LE1E:	moveml %a0-%a1,%sp@-
 	moveal %a1@,%a1
 	cmpib #1,%a1@(4)
 	bnes LE60
-	movew #-24485,%d0
+	movew #PowerOffTrap,%d0
 	_GetOSTrapAddress
 	movel %a0@(18),%d0
 	cmpil #1348564332,%d0
@@ -818,7 +818,7 @@ LE1E:	moveml %a0-%a1,%sp@-
 	moveq #22,%d0
 	_BlockMove
 	moveal %a1,%a0
-	movew #-24485,%d0
+	movew #PowerOffTrap,%d0
 	_SetOSTrapAddress
 LE60:	moveml %sp@+,%a0-%a1
 	rts
