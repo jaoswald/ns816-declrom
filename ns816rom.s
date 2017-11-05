@@ -823,7 +823,8 @@ LE1E:	moveml %a0-%a1,%sp@-
 LE60:	moveml %sp@+,%a0-%a1
 	rts
 
-DrvrCtl: movew %a0@(26),%d0
+DrvrCtl:
+	movew %a0@(26),%d0
 	cmpiw #-1,%d0
 	beqs LE7E
 	cmpiw #21,%d0
