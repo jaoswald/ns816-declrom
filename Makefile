@@ -14,3 +14,6 @@ ns816rom.bin: ns816rom.o
 	${OBJCOPY} ns816rom.o ns816rom.bin --input-target=elf32-m68k \
 	--output-target=binary
 
+verify:	ns816rom.bin
+	diff --report-identical-files ns816rom.bin \
+	Nubus_NS8_16_Memory_Board_RevD.ROM
