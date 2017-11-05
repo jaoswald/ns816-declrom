@@ -336,7 +336,7 @@ RsrcType128:	.long 0x000f000f
 DrvrName:	.string "Memory_RAM_NatSemi_NS816\0\0\0"
 
 	/* NS 8/16 ROM $a2c */
-BootRec:	.long 0xa3
+BootRec:	.long 0xae
 LA30:	.long 0x02020000
 LA34:	.long 0x00000004
 	
