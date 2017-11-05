@@ -775,7 +775,7 @@ LDE8:	movew %d1,%sp@-
 	   i/is = 000 = no memory indirect */
 	.long 0x103b1120
 	.word 0x0002
-oLDFA:	movew %sp@+,%d1
+LDFA:	movew %sp@+,%d1
 	 rorl #8,%d0
 	 rts
 
