@@ -342,6 +342,10 @@ BootCode:
 	moveal %a0, %a2
 	subaw #HParamBlockRecSize,%sp
 	moveal %sp,%a0
+	/* KeyMap:
+	    btst #0,KeyMap+7 tests shift key (key code 56)
+	    btst #1,KeyMap+7 tests for caps lock (key code 57)
+	 so btst #2,KeyMap+7 tests for key code 58 = option */
         btst #2,KeyMap+7
         bnes OpenErr /* option key down */
 	clrl %a0@(ioCompletion)
@@ -781,8 +785,13 @@ LDFA:	movew %sp@+,%d1
 
 LE00:	.byte 0x40,0xF9,0xFA,0xFB
 	.byte 0xFC,0xFD,0xFE,0x50
-LE08:	btst #2,KeyMap+7
+
+PowerOffTrap=0xa05b
+
+PowerOffRtn:
+	btst #2,KeyMap+7  /* option key */
 	beqs LE14
+	/* option key down */
 	movel %pc@(LE16),%sp@-
 LE14:	rts
 LE16:	.long 0
