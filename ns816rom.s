@@ -827,9 +827,12 @@ PowerOffRtn:
 	/* option key down */
 	movel %pc@(LE16),%sp@-
 LE14:	rts
-LE16:	.long 0
-	.long 0x5061756c /* "Paul" */
 
+	/* Magic string to mark _PowerOff trap */
+	kPaul='P<<24+'a<<16+'u<<8+'l  /* "Paul" */
+LE16:	.long 0
+MagicPaul:
+	.long kPaul
 	
 LE1E:	moveml %a0-%a1,%sp@-
 	moveal %a1@(20),%a1
