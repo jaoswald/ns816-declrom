@@ -386,8 +386,8 @@ LAB6:	movew %a0@(6),%d0
 LABC:	clrw %d0
 	rts
 
-	/* $ac0 */
-LAC0:	.byte DrvrDir128-.-1  /* 0x19 string length */
+DrvrName: /* $ac0 */
+	.byte DrvrDir128-.-1  /* 0x19 string length */
 	.ascii ".Memory_RAM_NatSemi_NS816"
 BootSExecBlockEnd:
 
