@@ -819,23 +819,30 @@ LDFA:	movew %sp@+,%d1
 LE00:	.byte 0x40,0xF9,0xFA,0xFB
 	.byte 0xFC,0xFD,0xFE,0x50
 
+	/* Apparently, this routine is installed to prevent power off
+	   unless the option key is held down? */
 PowerOffTrap=0xa05b
 
 PowerOffRtn:
 	btst #2,KeyMap+7  /* option key */
 	beqs LE14
-	/* option key down */
-	movel %pc@(LE16),%sp@-
+	/* option key down: execute system routine */
+	movel %pc@(SysPowerOffAddr),%sp@-
 LE14:	rts
 
+	/* space to save the original trap vector */
+SysPowerOffAddr:
+	.long 0
 	/* Magic string to mark _PowerOff trap */
 	kPaul='P<<24+'a<<16+'u<<8+'l  /* "Paul" */
-LE16:	.long 0
 MagicPaul:
 	.long kPaul
 PowerOffRtnLen=.-PowerOffRtn
 MagicPaulOffset=(MagicPaul-PowerOffRtn)
-LE1E:	moveml %a0-%a1,%sp@-
+
+
+DisablePowerOff:
+	moveml %a0-%a1,%sp@-
 	moveal %a1@(20),%a1
 	moveal %a1@,%a1
 	cmpib #1,%a1@(4)
@@ -845,7 +852,7 @@ LE1E:	moveml %a0-%a1,%sp@-
 	movel %a0@(MagicPaulOffset:b),%d0
 	cmpil #kPaul,%d0
 	beqs LE60
-	lea %pc@(LE16),%a1
+	lea %pc@(SysPowerOffAddr),%a1
 	movel %a0,%a1@
 	moveq #PowerOffRtnLen,%d0
 	_NewPtrSys
@@ -869,7 +876,7 @@ DrvrCtl:
 	cmpiw #7,%d0
 	beqs LE92
 	bras LE8A
-LE7E:	bsrs LE1E
+LE7E:	bsrs DisablePowerOff
 	bras LE8A
 LE82:	lea %pc@(LEB4),%a2
 	movel %a2,%a0@(28)
