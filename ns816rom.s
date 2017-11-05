@@ -833,6 +833,7 @@ LE14:	rts
 LE16:	.long 0
 MagicPaul:
 	.long kPaul
+PowerOffRtnLen=.-PowerOffRtn
 	
 LE1E:	moveml %a0-%a1,%sp@-
 	moveal %a1@(20),%a1
@@ -846,12 +847,12 @@ LE1E:	moveml %a0-%a1,%sp@-
 	beqs LE60
 	lea %pc@(LE16),%a1
 	movel %a0,%a1@
-	moveq #22,%d0
+	moveq #PowerOffRtnLen,%d0
 	_NewPtrSys
 	bnes LE60
 	moveal %a0,%a1 /* dest in %a1 */
 	lea %pc@(PowerOffRtn),%a0 /* source %a0 */
-	moveq #22,%d0
+	moveq #PowerOffRtnLen,%d0 /* byte count */
 	_BlockMove
 	moveal %a1,%a0
 	movew #PowerOffTrap,%d0
