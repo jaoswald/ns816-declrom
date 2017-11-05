@@ -834,7 +834,7 @@ LE16:	.long 0
 MagicPaul:
 	.long kPaul
 PowerOffRtnLen=.-PowerOffRtn
-	
+MagicPaulOffset=(MagicPaul-PowerOffRtn)
 LE1E:	moveml %a0-%a1,%sp@-
 	moveal %a1@(20),%a1
 	moveal %a1@,%a1
@@ -842,7 +842,7 @@ LE1E:	moveml %a0-%a1,%sp@-
 	bnes LE60
 	movew #PowerOffTrap,%d0
 	_GetOSTrapAddress
-	movel %a0@(18),%d0
+	movel %a0@(MagicPaulOffset:b),%d0
 	cmpil #kPaul,%d0
 	beqs LE60
 	lea %pc@(LE16),%a1
