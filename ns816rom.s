@@ -143,7 +143,8 @@ L8BC:	movel %sp@+,%d0
 	cmpib #0,MMU32Bit
 	bnes .LNoStrip
 	_StripAddress
-.LNoStrip:	moveal %d0,%a0
+.LNoStrip:
+	moveal %d0,%a0
 	jmp %a0@
 	
 	/* d0, d6 contain previous MMUMode, d7 slot byte, a3&a0 at seblock */
@@ -226,7 +227,7 @@ PartNum_:	.string "NS8/16\0"
 sRsrc128:	sRsrcOffsetEntry sRsrcType, RsrcType128
 	sRsrcOffsetEntry sRsrcName, DrvrName
 	sRsrcOffsetEntry sRsrcDrvrDir, DrvrDir128
-	sRsrcOffsetEntry sRsrcBootRec, BootRec
+	sRsrcOffsetEntry sRsrcBootRec, BootSExecBlock
 	sRsrcWordEntry sRsrcHWDevId, 1
 	sRsrcOffsetEntry MinorBaseOS, MinorBase128
 	sRsrcOffsetEntry MinorLength, MinorLength128
@@ -237,7 +238,7 @@ sRsrc128:	sRsrcOffsetEntry sRsrcType, RsrcType128
 sRsrc129:	sRsrcOffsetEntry sRsrcType, RsrcType128
 	sRsrcOffsetEntry sRsrcName, DrvrName
 	sRsrcOffsetEntry sRsrcDrvrDir, DrvrDir128
-	sRsrcOffsetEntry sRsrcBootRec, BootRec
+	sRsrcOffsetEntry sRsrcBootRec, BootSExecBlock
 	sRsrcWordEntry sRsrcHWDevId, 1
 	sRsrcOffsetEntry MinorBaseOS, MinorBase128
 	sRsrcOffsetEntry MinorLength, MinorLength129
@@ -248,7 +249,7 @@ sRsrc129:	sRsrcOffsetEntry sRsrcType, RsrcType128
 sRsrc130:	sRsrcOffsetEntry sRsrcType, RsrcType128
 	sRsrcOffsetEntry sRsrcName, DrvrName
 	sRsrcOffsetEntry sRsrcDrvrDir, DrvrDir128
-	sRsrcOffsetEntry sRsrcBootRec, BootRec
+	sRsrcOffsetEntry sRsrcBootRec, BootSExecBlock
 	sRsrcWordEntry sRsrcHWDevId, 1
 	sRsrcOffsetEntry MinorBaseOS, MinorBase128
 	sRsrcOffsetEntry MinorLength, MinorLength130
@@ -259,7 +260,7 @@ sRsrc130:	sRsrcOffsetEntry sRsrcType, RsrcType128
 sRsrc131:	sRsrcOffsetEntry sRsrcType, RsrcType128
 	sRsrcOffsetEntry sRsrcName, DrvrName
 	sRsrcOffsetEntry sRsrcDrvrDir, DrvrDir128
-	sRsrcOffsetEntry sRsrcBootRec, BootRec
+	sRsrcOffsetEntry sRsrcBootRec, BootSExecBlock
 	sRsrcWordEntry sRsrcHWDevId, 1
 	sRsrcOffsetEntry MinorBaseOS, MinorBase128
 	sRsrcOffsetEntry MinorLength, MinorLength131
@@ -273,40 +274,100 @@ RsrcType128:	.long 0x000f000f
 DrvrName:	.string "Memory_RAM_NatSemi_NS816\0\0\0"
 
 	/* NS 8/16 ROM $a2c */
-BootRec:	.long 0xae
-LA30:	.long 0x02020000
-LA34:	.long 0x00000004
+	/* SExecBlock, block size $ae */
+	/* revision level $02, CPU $02, reserved $0000 */
+	/* code offset 4 */
+	/* code */
 	
-LA38:	moveml %d1-%fp,%sp@-
+BootSExecBlock:
+	.long BootSExecBlockEnd-. /* 0xae */
+	.byte 2 /* revision 2 */
+	.byte cpu68020
+	.byte 0,0 /* reserved */
+	.long BootCode-.
+
+	/* _HOpen takes a pointer to a hierarchical file system parameter
+	   block */
+	.struct 0
+HParamBlockRec:
+qLink:	.space 4 /* next queue link */
+qType:	.space 2 /* 4: Integer queue type */
+ioTrap:	.space 2 /* 6: Integer routine trap */
+ioCmdAddr: .space 4 /* 8: routine address */
+ioCompletion:	.space 4 /* 12: ProcPtr to completion routine */
+ioResult:	.space 2 /* 16: OSErr: result code */
+ioNamePtr:	.space 4 /* 18: pointer to path name */
+ioVRefNum:	.space 2 /* 22: volume specification */
+	/* variant record portion */
+ioRefNum: /* 24 */
+ioFRefNum:
+filler2:
+filler3:
+filler7:
+ioDstVRefNum:
+filler9:
+filler14:
+ioMatchPtr:
+filler21:
+	.space 2
+ioVersNum: /* 26 */
+ioFVersNum:
+ioDenyModes:
+ioObjType:
+filler8:
+ioWDIndex:
+	.space 1
+ioPermssn: /* 27 */
+filler1:
+	.space 1
+ioMisc: /* 28 */
+	.space 4
+ioBuffer: /* 32 */
+	.space 4
+ioReqCount: /* 36 */
+	.space 4
+ioActCount: /* 40 */
+	.space 4
+ioPosMode: /* 44 */
+	.space 2
+ioPosOffset: /* 46 */
+	.space 4
+HParamBlockRecSize=.-HParamBlockRec
+	.text
+
+
+	/* sBootRecord code passed an seBlock pointed at by %a0 */
+BootCode:
+	moveml %d1-%fp,%sp@-
 	moveal %a0, %a2
-	subaw #50,%sp
+	subaw #HParamBlockRecSize,%sp
 	moveal %sp,%a0
-        btst #2,0x0000017b
+        btst #2,KeyMap+7
         bnes LA96
-	clrl %a0@(12)
+	clrl %a0@(ioCompletion)
 	lea %pc@(LAC0),%a1
-	movel %a1,%a0@(18)
-	moveb #3,%a0@(27)
-	clrl %a0@(28)
-	clrw %a0@(32)
-	moveb %a2@,%a0@(34)
-	moveb %a2@(1),%a0@(35)
-	.short 0xa200
+	movel %a1,%a0@(ioNamePtr)
+	moveb #3,%a0@(ioPermssn)
+	clrl %a0@(ioMisc)
+	clrw %a0@(ioBuffer)
+	moveb %a2@(seSlot),%a0@(ioBuffer+2)
+	moveb %a2@(seRsrcID),%a0@(ioBuffer+3)
+	_HOpen
 	bnes LA96
-	movew %a0@(24),%d0
+	movew %a0@(ioRefNum),%d0
 	bsrs LA9C
 	beqs LA88
-	tstw 0x00000154
+	tstw EvtBufCnt
 	bles LA88
 	moveaw #7,%a0
-	.short 0xa02f
-LA88:	addaw #50,%sp
-	moveml %sp@+,%d1-%fp
-	movew %d0,%a0@(2)
+	_PostEvent
+LA88:	addaw #HParamBlockRecSize,%sp
+	moveml %sp@+,%d1-%fp /* restores a0 to seBlock */
+	movew %d0,%a0@(seStatus)
 	rts
 LA96:	movew #-23,%d0
 	bras LA88
-LA9C:	lea 0x00000308,%a0
+LA9C:	lea DrvQHdr,%a0
 	moveal %a0@(6),%a1
 	moveal %a0@(2),%a0
 LAA8:	cmpw %a0@(8),%d0
@@ -319,9 +380,12 @@ LAB6:	movew %a0@(6),%d0
 	rts
 LABC:	clrw %d0
 	rts
+
 	/* $ac0 */
 LAC0:	.byte DrvrDir128-.-1  /* 0x19 string length */
 	.ascii ".Memory_RAM_NatSemi_NS816"
+BootSExecBlockEnd:
+
 	/* NS 8/16 ROM $ada */
 DrvrDir128:
 	sRsrcOffsetEntry cpu68020, DrvrSBlock
@@ -520,10 +584,8 @@ LC70:	rts
 LC72:	movew #-23,%d0
 	bras LC70
 
- /*  0x11c: UTableBase */
-LC78: 	moveal 0x0000011c,%a2
-/* 0x1d2: UnitNtryCnt */
-	movew 0x000001d2,%d3
+LC78: 	moveal UTableBase,%a2
+	movew UnitNtryCnt,%d3
 	subqw #1,%d3
 LC82:	movel %a2@,%d0
 	beqs LCBE
@@ -581,7 +643,7 @@ LCE4:	movew #-1,%d0
 
 LCEA:	linkw %fp,#-50
 	moveml %d3-%d4/%a2-%a3,%sp@-
-	lea 0x00000308,%a2
+	lea DrvQHdr,%a2
 	moveal %a2@(6),%a3
 	moveal %a2@(2),%a1
 	moveq #4,%d0
@@ -664,12 +726,12 @@ LD9E:	addal %d2,%a0
 	bnes LDAC
 	exg %a0,%a1
 LDAC:	moveq #1,%d0
-	 .short 0xa05d
+	 _SwapMMUMode
 	 moveb %d0,%d7
 	 movel %d4,%d0
-	 .short 0xa02e
+	 _BlockMove
 	 moveb %d7,%d0
-	 .short 0xa05d
+	 _SwapMMUMode
 	 addl %d4,%a2@(40)
 	 subl %d4,%d1
 	 addal %d4,%a3
@@ -679,11 +741,11 @@ LDC6:	subl %d3,%d2
 	bras LD8A
 LDCA:	clrw %d0
 LDCC:	moveml %sp@+,%d3-%a4
-	movel 0x000008fc,%sp@-
+	movel JIODone,%sp@-
 	rts
 LDD6:	movew #-36,%d0
 	bras LDCC
-LDDC:	andl 0x0000031a,%d0
+LDDC:	andl Lo3Bytes,%d0
 	 btst #23,%d0
 	 bnes LDE8
 	 rts
@@ -718,7 +780,7 @@ oLDFA:	movew %sp@+,%d1
 
 LE00:	.byte 0x40,0xF9,0xFA,0xFB
 	.byte 0xFC,0xFD,0xFE,0x50
-LE08:	btst #2,0x0000017b
+LE08:	btst #2,KeyMap+7
 	beqs LE14
 	movel %pc@(LE16),%sp@-
 LE14:	rts
@@ -732,22 +794,22 @@ LE1E:	moveml %a0-%a1,%sp@-
 	cmpib #1,%a1@(4)
 	bnes LE60
 	movew #-24485,%d0
-	.short 0xa346
+	_GetOSTrapAddress
 	movel %a0@(18),%d0
 	cmpil #1348564332,%d0
 	beqs LE60
 	lea %pc@(LE16),%a1
 	movel %a0,%a1@
 	moveq #22,%d0
-	.short 0xa51e
+	_NewPtrSys
 	bnes LE60
 	moveal %a0,%a1
 	lea %pc@(LE08),%a0
 	moveq #22,%d0
-	.short 0xa02e
+	_BlockMove
 	moveal %a1,%a0
 	movew #-24485,%d0
-	.short 0xa247
+	_SetOSTrapAddress
 LE60:	moveml %sp@+,%a0-%a1
 	rts
 
@@ -764,21 +826,21 @@ LE7E:	bsrs LE1E
 LE82:	lea %pc@(LEB4),%a2
 	movel %a2,%a0@(28)
 LE8A:	 clrw %d0
-LE8C:	 movel 0x000008fc,%sp@-
+LE8C:	 movel JIODone,%sp@-
 	 rts
 LE92:	 movew #-17,%d0
 	bras LE8C
 	
 DrvrStatus:
 	movew #-18,%d0
-	movel 0x000008fc,%sp@-
+	movel JIODone,%sp@-
 	rts
 	
 DrvrClose:
 	 movel %a1@(20),%d0
 	 beqs LEB0
 	 moveal %d0,%a0
-	 .short 0xa023
+	 _DisposeHandle
 	 clrl %a1@(20)
 LEB0:	clrw %d0
 	rts
