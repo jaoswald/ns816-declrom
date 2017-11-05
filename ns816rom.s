@@ -372,16 +372,49 @@ LA88:	addaw #HParamBlockRecSize,%sp
 OpenErr:
 	movew #openErr,%d0
 	bras LA88
+
+	/* Operating System Queue Header Type */
+
+	.struct 0
+QHdr:
+qFlags:	.space 2 /* Integer: queue flags */
+qHead:	.space 4 /* QElemPtr first queue entry */
+qTail:	.space 4 /* QElemPtr last queue entry */
+QHdrSize=.-QHdr
+	.text
+
+	/* Queue Element: variant type
+	   QElem = RECORD
+              CASE QTypes OF
+                  vType (vblQElem: VBLTask);
+                  ioQType: (ioQElem: ParamBlockRec);
+                  drvQType: (drvQElem: DrvQEl);
+                  evType: (evQElem: EvQEl);
+                  fsQType: (vcbQElem: VCB)
+	   END; */
+
+	.struct 0
+	/* DrvQEl type */
+DrvQEl:
+qLink:	.space 4 /* QElemPtr next queue entry */
+qType:	.space 2 /* queue type */
+dQDrive:	.space 2 /* drive number */
+dQRefNum:	.space 2 /* driver reference number */
+dQFSID:	.space 2 /* file-system identifier */
+dQDrvSize:	.space 2 /* number of logical blocks */
+DrvQElSize=.-DrvQEl
+	.text
+
 LA9C:	lea DrvQHdr,%a0
-	moveal %a0@(6),%a1
-	moveal %a0@(2),%a0
-LAA8:	cmpw %a0@(8),%d0
+	moveal %a0@(qTail),%a1
+	moveal %a0@(qHead),%a0
+LAA8:	cmpw %a0@(dQRefNum),%d0
 	beqs LAB6
 	cmpal %a0,%a1
 	beqs LABC
-	moveal %a0@,%a0
+	moveal %a0@(qLink),%a0
 	bras LAA8
-LAB6:	movew %a0@(6),%d0
+LAB6:	movew %a0@(dQDrive),%d0
 	rts
 LABC:	clrw %d0
 	rts
