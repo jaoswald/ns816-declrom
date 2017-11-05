@@ -225,7 +225,7 @@ PartNum_:	.string "NS8/16\0"
 
 	/* In NS 8/16 ROM $968 */
 sRsrc128:	sRsrcOffsetEntry sRsrcType, RsrcType128
-	sRsrcOffsetEntry sRsrcName, DrvrName
+	sRsrcOffsetEntry sRsrcName, sRsrcName_
 	sRsrcOffsetEntry sRsrcDrvrDir, DrvrDir128
 	sRsrcOffsetEntry sRsrcBootRec, BootSExecBlock
 	sRsrcWordEntry sRsrcHWDevId, 1
@@ -236,7 +236,7 @@ sRsrc128:	sRsrcOffsetEntry sRsrcType, RsrcType128
 	.long EndOfList
 
 sRsrc129:	sRsrcOffsetEntry sRsrcType, RsrcType128
-	sRsrcOffsetEntry sRsrcName, DrvrName
+	sRsrcOffsetEntry sRsrcName, sRsrcName_
 	sRsrcOffsetEntry sRsrcDrvrDir, DrvrDir128
 	sRsrcOffsetEntry sRsrcBootRec, BootSExecBlock
 	sRsrcWordEntry sRsrcHWDevId, 1
@@ -247,7 +247,7 @@ sRsrc129:	sRsrcOffsetEntry sRsrcType, RsrcType128
 	.long EndOfList
 
 sRsrc130:	sRsrcOffsetEntry sRsrcType, RsrcType128
-	sRsrcOffsetEntry sRsrcName, DrvrName
+	sRsrcOffsetEntry sRsrcName, sRsrcName_
 	sRsrcOffsetEntry sRsrcDrvrDir, DrvrDir128
 	sRsrcOffsetEntry sRsrcBootRec, BootSExecBlock
 	sRsrcWordEntry sRsrcHWDevId, 1
@@ -258,7 +258,7 @@ sRsrc130:	sRsrcOffsetEntry sRsrcType, RsrcType128
 	.long EndOfList
 
 sRsrc131:	sRsrcOffsetEntry sRsrcType, RsrcType128
-	sRsrcOffsetEntry sRsrcName, DrvrName
+	sRsrcOffsetEntry sRsrcName, sRsrcName_
 	sRsrcOffsetEntry sRsrcDrvrDir, DrvrDir128
 	sRsrcOffsetEntry sRsrcBootRec, BootSExecBlock
 	sRsrcWordEntry sRsrcHWDevId, 1
@@ -271,7 +271,7 @@ sRsrc131:	sRsrcOffsetEntry sRsrcType, RsrcType128
 	/* NS 8/16 ROM $a08 */
 RsrcType128:	.long 0x000f000f
 	.long 0x000f0003
-DrvrName:	.string "Memory_RAM_NatSemi_NS816\0\0\0"
+sRsrcName_:	.string "Memory_RAM_NatSemi_NS816\0\0\0"
 
 	/* NS 8/16 ROM $a2c */
 	/* SExecBlock, block size $ae */
