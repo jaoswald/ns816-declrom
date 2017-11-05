@@ -842,15 +842,15 @@ LE1E:	moveml %a0-%a1,%sp@-
 	movew #PowerOffTrap,%d0
 	_GetOSTrapAddress
 	movel %a0@(18),%d0
-	cmpil #1348564332,%d0
+	cmpil #kPaul,%d0
 	beqs LE60
 	lea %pc@(LE16),%a1
 	movel %a0,%a1@
 	moveq #22,%d0
 	_NewPtrSys
 	bnes LE60
-	moveal %a0,%a1
-	lea %pc@(LE08),%a0
+	moveal %a0,%a1 /* dest in %a1 */
+	lea %pc@(PowerOffRtn),%a0 /* source %a0 */
 	moveq #22,%d0
 	_BlockMove
 	moveal %a1,%a0
