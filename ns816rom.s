@@ -357,7 +357,7 @@ BootCode:
 	moveb %a2@(seSlot),%a0@(ioBuffer+2)
 	moveb %a2@(seRsrcID),%a0@(ioBuffer+3)
 	_HOpen
-	bnes LA96
+	bnes OpenErr
 	movew %a0@(ioRefNum),%d0
 	bsrs LA9C
 	beqs LA88
