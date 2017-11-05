@@ -343,7 +343,7 @@ BootCode:
 	subaw #HParamBlockRecSize,%sp
 	moveal %sp,%a0
         btst #2,KeyMap+7
-        bnes LA96
+        bnes OpenErr /* option key down */
 	clrl %a0@(ioCompletion)
 	lea %pc@(LAC0),%a1
 	movel %a1,%a0@(ioNamePtr)
@@ -365,7 +365,8 @@ LA88:	addaw #HParamBlockRecSize,%sp
 	moveml %sp@+,%d1-%fp /* restores a0 to seBlock */
 	movew %d0,%a0@(seStatus)
 	rts
-LA96:	movew #-23,%d0
+OpenErr:
+	movew #openErr,%d0
 	bras LA88
 LA9C:	lea DrvQHdr,%a0
 	moveal %a0@(6),%a1
@@ -428,7 +429,7 @@ DrvrOpen:
 	clrw %d0
 LB20:	movew %d0,%a3@(16)
 	rts
-LB26:	movew #-23,%d0
+LB26:	movew #openErr,%d0
 	bras LB20
 LB2C:	moveq #0,%d2
 LB2E:	moveal %a4@(20),%a0
@@ -581,7 +582,7 @@ LC60:	bsrs LC78
 	clrw %d0
 LC70:	rts
 
-LC72:	movew #-23,%d0
+LC72:	movew #openErr,%d0
 	bras LC70
 
 LC78: 	moveal UTableBase,%a2

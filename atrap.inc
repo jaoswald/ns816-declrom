@@ -16,7 +16,8 @@
 	.short 0xA055
 	.endm
 
-
+	fsRdWrPerm=3
+	openErr=-23
 	.macro _HOpen
 	.short 0xA200
 	.endm
