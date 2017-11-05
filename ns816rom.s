@@ -345,7 +345,7 @@ BootCode:
         btst #2,KeyMap+7
         bnes OpenErr /* option key down */
 	clrl %a0@(ioCompletion)
-	lea %pc@(LAC0),%a1
+	lea %pc@(DrvrName),%a1
 	movel %a1,%a0@(ioNamePtr)
 	moveb #3,%a0@(ioPermssn)
 	clrl %a0@(ioMisc)
