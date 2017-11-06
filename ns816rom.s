@@ -467,7 +467,100 @@ DrvrPName:	.byte LB12-.-1  /* 0x19 string length */
 	.ascii ".Memory_RAM_NatSemi_NS816"
 LB12:	 .word 0
 
-	/* A0 pointer to parameter block */
+	/* ParamBlockRec for Device Drivers */
+/*
+    typedef union ParamBlockRec {
+      IOParam        ioParam ;
+      FileParam      fileParam ;
+      VolumeParam    volumeParam ;
+      CntrlParam     cntrlParam ;
+      SlotDevParam   slotDevParam ;
+      MultiDevParam  multiDevParam ;
+    } ParamBlockRec		     ;
+    typedef ParamBlockRec *ParmBlkPtr ;
+*/
+/* IOParam used for open, close, read, write */
+	.struct 0
+IOParam:
+qLink:	.space 4 /* next queue entry */
+qType:	.space 2 /* 4: queue type */
+	aRdCmd=2
+	aWrCmd=3
+ioTrap:	.space 2 /* 6: routine trap */
+ioCmdAddr:	.space 4 /* 8: routine address */
+ioCompletion:	.space 4 /* 12: completion routine address */
+ioResult:	.space 2 /* 16: result code */
+ioNamePtr:	.space 4 /* 18: pointer to driver name */
+ioVRefNum:	.space 2 /* 22: volume reference or drive number */
+ioRefNum:	.space 2 /* 24: driver reference number */
+ioVersNum:	.space 1 /* 26: not used by the Device Manager */
+ioPermssn:	.space 1 /* 27: read/write permission */
+ioMisc:		.space 4 /* 28: not used by the Device Manager */
+ioBuffer:	.space 4 /* 32: pointer to data buffer */
+ioReqCount:	.space 4 /* 36: requested number of bytes */
+ioActCount:	.space 4 /* 40: actual number of bytes completed */
+ioPosMode:	.space 2 /* 44: positioning mode */
+ioPosOffset:	.space 4 /* 46: positioning offset */
+IOParamLen=.-IOParam
+	.text
+/* CntrlParam used for control and status */
+
+	.struct 0
+CntlParam:
+qLink:	  .space 4 /* next queue entry */
+qType:	  .space 2 /* 4: queue type */
+ioTrap:	 .space 2 /* 6: routine trap */
+ioCmdAddr:	      .space 4 /* 8: routine address */
+ioCompletion:	   .space 4 /* 12: completion routine address */
+ioResult:	       .space 2 /* 16: result code */
+ioNamePtr:	      .space 4 /* 18: pointer to driver name */
+ioVRefNum:	      .space 2 /* 22: volume reference or drive number */
+ioCRefNum:	       .space 2 /* 24: driver reference number */
+csCode:	.space 2 /* 26: word, type of control or status request */
+
+	goodbye=-1 /* heap being reinitialized */
+	/* Disk Driver csCode fr control call DiskEject */
+	ejectCode=7
+csParam: .space 22 /* control or status information */
+CntlParamLen=.-CntlParam
+	.text
+
+	/* control result codes */
+	controlErr=-17 /* Driver does not respond to this control request */
+	/* status result codes */
+	statusErr=-18 /* Driver does not respond to this status request */
+
+	.struct 0
+AuxDCE:
+dCtlDriver:	.space 4 /* pointer or handle to driver */
+dCtlFlags:	.space 2 /* flags */
+	/* high order byte from drvrFlags word of driver resource */
+	/* low order byte contains following run-time flags */
+	dOpened=4
+	dOpenedMask=0x20
+	dRAMBased=6
+	dRAMBasedMask=0x40
+	drvrActive=7
+	drvrActiveMask=0x80
+dCtlQHdr:	.space QHdrSize /* I/O Queue Header */
+dCtlPosition:	.space 4 /* 16: current R/W byte position */
+dCtlStorage:	.space 4 /* 20: Handle to private storage */
+dCtlRefNum:	.space 2 /* 24: driver reference number */
+dCtlCurTicks:	.space 4 /* 26 used internally */
+dCtlWindow:	.space 4 /* 30: GrafPtr: to driver's window */
+dCtlDelay:	.space 2 /* 34: ticks between periodic actions */
+dCtlEMask:	.space 2 /* desk accessory event mask */
+dCtlMenu:	.space 2 /* desk accessory menu ID */
+dCtlSlot:	.space 1 /* slot */
+dCtlSlotId:	.space 1 /* sResource directory ID */
+dCtlDevBase:	.space 4 /* slot device base address */
+dCtlOwner:	.space 4 /* Ptr, reserved; must be 0 */
+dCtlExtDev:	.space 1 /* external device ID */
+fillByte:	.space 1 /* reserved */
+AuxDCELen=.-AuxDCE
+	.text
+
+        /* A0 pointer to driver parameter block */
 	/* A1 pointer to driver device control entry */
 DrvrOpen:
 	moveal %a0,%a3
@@ -475,12 +568,12 @@ DrvrOpen:
 	bsrw LC60
 	bnes LB26
 	clrw %d0
-LB20:	movew %d0,%a3@(16)
+LB20:	movew %d0,%a3@(ioResult)
 	rts
 LB26:	movew #openErr,%d0
 	bras LB20
 LB2C:	moveq #0,%d2
-LB2E:	moveal %a4@(20),%a0
+LB2E:	moveal %a4@(dCtlStorage),%a0
 	moveal %a0@,%a0
 	moveal %a0@(10),%a1
 	moveq #1,%d0
@@ -500,8 +593,7 @@ LB5A:	addal %d1,%a1
 	movel %d1,%d2
 LB66:	moveb %sp@+,%d0
 	_SwapMMUMode
-/* dCtlStorage = Device Control Entry offset 20 */
-	moveal %a4@(20),%a0
+	moveal %a4@(dCtlStorage),%a0
 	moveal %a0@,%a0
 	subl %d2,%a0@
 	subl %d2,%a0@(6)
@@ -516,10 +608,9 @@ LB7C:	moveq #126,%d0
 	_NewHandleSysClear
 
 	bnes LB9E
-/* dCtlStorage = Device Control Entry offset 20 */
-	movel %a0,%a4@(20)
+	movel %a0,%a4@(dCtlStorage)
 	bsrs LBA4
-	moveal %a4@(20),%a0
+	moveal %a4@(dCtlStorage),%a0
 	moveal %a0@,%a0
 	tstl %a0@
 	beqs LB98
@@ -527,8 +618,7 @@ LB7C:	moveq #126,%d0
 	clrw %d0
 LB96:	rts
 
-/* dCtlStorage = Device Control Entry offset 20 */
-LB98:	moveal %a4@(20),%a0
+LB98:	moveal %a4@(dCtlStorage),%a0
 	
 	.macro _DisposeHandle
 	.short 0xa023
@@ -538,7 +628,7 @@ LB98:	moveal %a4@(20),%a0
 
 LB9E:	movew #-1,%d0
 	bras LB96
-LBA4:	moveal %a4@(20),%a0
+LBA4:	moveal %a4@(dCtlStorage),%a0
 
 	.macro _HLock
 	.short 0xa029
@@ -565,8 +655,7 @@ LBBE:	addqb #1,%a0@(49)
 	_SlotManager
 
 	beqs LBFE
-/* dCtlStorage = Device Control Entry offset 20 */
-	moveal %a4@(20),%a0
+	moveal %a4@(dCtlStorage),%a0
 	
 	.macro _HUnlock
 	.short 0xa02a
@@ -642,14 +731,11 @@ LC82:	movel %a2@,%d0
 	moveal %a0@+,%a0
 	moveq #0,%d0
 	moveal %a0@,%a1
-/* %a0@(5): dCtlFlags, bit #6 is “dRAMBased” */
-	btst #6,%a0@(5)
+	btst #dRAMBased,%a0@(dCtlFlags+1)
 	beqs LC98
 	moveal %a1@,%a1
-/* offset 18 in IOParam = ioNamePtr */
-LC98:	lea %a1@(18),%a0
+LC98:	lea %a1@(ioNamePtr),%a0
 	moveb %a0@+,%d0
-/* af8: DrvrPName */
 	lea %pc@(DrvrPName),%a1
 	swap %d0
 	moveb %a1@+,%d0
@@ -673,8 +759,7 @@ LCBE:	addql #4,%a2
 	clrw %d0
 LCC6:	rts
 
-/* DCE offset 20 = dCtlStorage */
-LCC8:	moveal %a4@(20),%a0
+LCC8:	moveal %a4@(dCtlStorage),%a0
 	moveal %a0@,%a0
 	movel %a0@,%d0
 	beqs LCE4
@@ -693,17 +778,17 @@ LCE4:	movew #-1,%d0
 LCEA:	linkw %fp,#-50
 	moveml %d3-%d4/%a2-%a3,%sp@-
 	lea DrvQHdr,%a2
-	moveal %a2@(6),%a3
-	moveal %a2@(2),%a1
+	moveal %a2@(qTail),%a3
+	moveal %a2@(qHead),%a1
 	moveq #4,%d0
-LD00:	cmpw %a1@(6),%d0
+LD00:	cmpw %a1@(qTail),%d0
 	beqs LD0E
 	cmpal %a1,%a3
 	beqs LD16
 	moveal %a1@,%a1
 	bras LD00
 
-LD0E:	moveal %a2@(2),%a1
+LD0E:	moveal %a2@(qHead),%a1
 	addqw #1,%d0
 	bras LD00
 
@@ -720,15 +805,15 @@ LD16:	movew %d0,%fp@(14)
 	movew %d0,%fp@(14)
 	bras LD50
 
-LD28:	movel #524288,%a0@+
-	clrw %a0@(10)
+LD28:	movel #0x80000,%a0@+
+	clrw %a0@(dQFSID)
 	movel %fp@(10),%d0
 	swap %d0
-	movel %d0,%a0@(12)
+	movel %d0,%a0@(dQDrvSize) /*? number of logical blocks */
 	tstw %d0
 	beqs LD42
 	moveq #1,%d0
-LD42:	movew %d0,%a0@(4)
+LD42:	movew %d0,%a0@(qType)
 	movew %d3,%d0
 	swap %d0
 	movew %fp@(8),%d0
@@ -744,15 +829,18 @@ LD50:	moveml %sp@+,%d3-%d4/%a2-%a3
 	addql #6,%sp
 	jmp %a0@
 
-DrvrPrime:	 moveml %d3-%a4,%sp@-
+	/* A0 pointer to driver parameter block, ioTrap shows read/write */
+	/* A1 pointer to driver device control entry */
+DrvrPrime:
+	moveml %d3-%a4,%sp@-
 	moveal %a0,%a2
-	clrl %a2@(40)
-	movel %a2@(32),%d0
+	clrl %a2@(ioActCount)
+	movel %a2@(ioBuffer),%d0
 	bsrw LDDC
 	moveal %d0,%a3
-	movel %a2@(36),%d1
-	movel %a1@(16),%d2
-	moveal %a1@(20),%a4
+	movel %a2@(ioReqCount),%d1
+	movel %a1@(dCtlPosition),%d2
+	moveal %a1@(dCtlStorage),%a4
 	moveal %a4@,%a4
 	movel %d1,%d3
 	addl %d2,%d3
@@ -771,17 +859,17 @@ LD8A:	tstl %d1
 	movel %d1,%d4
 LD9E:	addal %d2,%a0
 	moveal %a3,%a1
-	cmpib #3,%a2@(7)
+	cmpib #aWrCmd,%a2@(ioTrap+1)
 	bnes LDAC
 	exg %a0,%a1
-LDAC:	moveq #1,%d0
+LDAC:	moveq #true32b,%d0
 	 _SwapMMUMode
 	 moveb %d0,%d7
-	 movel %d4,%d0
+	 movel %d4,%d0 /* byte count */
 	 _BlockMove
 	 moveb %d7,%d0
 	 _SwapMMUMode
-	 addl %d4,%a2@(40)
+	 addl %d4,%a2@(ioActCount)
 	 subl %d4,%d1
 	 addal %d4,%a3
 	 moveq #0,%d2
@@ -879,35 +967,36 @@ LE60:	moveml %sp@+,%a0-%a1
 	rts
 
 DrvrCtl:
-	movew %a0@(26),%d0
-	cmpiw #-1,%d0
+	movew %a0@(csCode),%d0
+	cmpiw #goodbye,%d0
 	beqs LE7E
 	cmpiw #21,%d0
 	beqs LE82
-	cmpiw #7,%d0
+	cmpiw #ejectCode,%d0
 	beqs LE92
 	bras LE8A
 LE7E:	bsrs DisablePowerOff
 	bras LE8A
+
 LE82:	lea %pc@(LEB4),%a2
-	movel %a2,%a0@(28)
-LE8A:	 clrw %d0
-LE8C:	 movel JIODone,%sp@-
-	 rts
-LE92:	 movew #-17,%d0
+	movel %a2,%a0@(csParam)
+LE8A:	clrw %d0
+LE8C:	movel JIODone,%sp@-
+	rts
+LE92:	movew #controlErr,%d0
 	bras LE8C
 	
 DrvrStatus:
-	movew #-18,%d0
+	movew #statusErr,%d0
 	movel JIODone,%sp@-
 	rts
 	
 DrvrClose:
-	 movel %a1@(20),%d0
-	 beqs LEB0
-	 moveal %d0,%a0
-	 _DisposeHandle
-	 clrl %a1@(20)
+	movel %a1@(dCtlStorage),%d0
+	beqs LEB0
+	moveal %d0,%a0
+	_DisposeHandle
+	clrl %a1@(dCtlStorage)
 LEB0:	clrw %d0
 	rts
 
