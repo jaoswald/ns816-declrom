@@ -31,7 +31,18 @@ RsrcType1:	.long 0x00010000
 RsrcName:	.string "NS8/16 Memory Expansion Card\0\0\0"
 PRamInit:	.long 12 /* data length */
 	.byte 0,0,1,0
-	.byte 2,0,0,0	
+	.byte 2,0,0,0
+/* according to macivory/code/hardware-init.c
+/* National Semiconductor NS 8/16 Memory Expansion Card info */
+/* typedef struct {
+     short boardID (0,0?)
+     byte  diskOn (kDiskOn?)
+     byte safetyOn (0?)
+     byte unused[4] (2,0,0,0?)
+   } NSPRAMRec
+   #define NS816BoardID 0x010F
+   #define kDiskOn 1
+   #define kDiskOff 2 */
 PrimaryInit_:	.long PrimaryInitEnd-.
 	.byte 2 /* Revision 2 */
 
