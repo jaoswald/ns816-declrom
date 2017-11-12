@@ -183,37 +183,63 @@ L900:	movel %sp@+,BusErrVector
 	movew %d1,%d7
 	rts
 
-	/* Declaration byte lane means $E1 must be at FsFF FFFC */
-	/* Does that mean PrimaryInit is executing from RAM? */
-	/* PC of the read from card: 84f byte in the rom counting by bytes
-	   but not words...how is byte lane 0 only executable?, */
-	/* Handler for bus error: 68000 format
-	  SP-> 16-bit special status word
-	            0000 0000 000r ixxx
-	            r=1 for read, 0 write
-	            i=0 for instruction, 1 for not
-	            xxx "function code"
-	       32 bit access address [+2 bytes]
-	       16 bit instruction    [+6 bytes]
-	       16 bit status reg     [+8 bytes]
-	       32 bit program counter [+10 bytes]
-*/
+/* Note: the PrimaryInit code is copied into RAM for execution, because the
+   NuBus declaration ROM is likely not 32 bits wide. */
+/* Handler for Bus Error; looks like it assumes the exception is
+   a 68020 Long Bus Fault stack frame (format $B). For NuBus reads,
+   this makes sense, as the instruction would have been successfully
+   fetched and in-progress.
+   The Mac Slot manager on 68020 and 68030 machines seems to deal with this
+   error by clearing the $6 offset word containing the type+vector offset,
+   fooling the system into thinking the exception was a type $0, four-word
+   stack frame. I guess that works? */
+
 	.struct 0
 ExceptFrame:
-ExcInfo:	.space 2
-ExcAddr:	.space 4
-ExcInst:	.space 2
-ExcSReg:	.space 2
-ExcPC:		.space 4
+ExcSReg:	.space 2 /* saved status register */
+ExcPC:		.space 4 /* program counter */
+ExcFrameType:	.space 1 /* type byte, top 4 bits is $B, lower is top of */
+        /* vector offset */
+ExcVectorOffset:	.space 1 /* rest of vector offset */
+ExcInternalReg:	.space 2 /* "Internal Register" */
+ExcInternalDFBit = 0
+/* ssw:
+   bit 15 14 13 12 11 10 9 8     7  6  5 4  3  2     1   0
+       FC FB RC RB  0  0 0 DF    RM RW SIZE 0  FC2 FC1 FC0
+   FC: fault on stagc C (=1)
+   FB: fault on stage B (=1)
+   RC: re-run flag for stage C (set when FC=1, clear it to tell proc to
+       read it from the stack copy instead of re-executing the instruction
+       fetch from memory)
+   RB: re-run flag for stage B
+   DF: data/fault re-run flag. =1 if data fetch fault, clear it read the
+       value from the Data Input Buffer on the stack.
+   RM: =1 read/modify/write on data cycle.
+   RW: =1 for read on data cycle, 0 for write
+   SIZE: operand size on data cycle.
+   FC2,FC1,FC0: specifies "address space" for data cycle.
+*/
+
+ExcSSW:	        .space 2 /* Special Status Register */
+ExcPipeStageC:	.space 2 /* instruction pipe stage C */
+ExcPipeStageB:	.space 2 /* instruction pipe stage B */
+ExcFaultAddr:	.space 4 /* Data Access Address */
+ExcInternalReg2:.space 4 /* two "internal register" words */
+ExcDataOutBuffer: .space 4 /* "Data Output Buffer" */
+ExcInternalReg3:.space 8 /* four "internal register" words */
+ExcStageBAddr:	.space 4 /* stage B Address */
+ExcInternalReg4:.space 4 /* two "internal register" words */
+ExcDataInBuffer:.space 4 /* "Data Input Buffer" */
+ExcInternalReg5:.space 6 /* three "internal register" words */
+ExcVersionNum:	.space 2 /* 4 bit version # in high nibble, rest internal */
+ExcInternalReg6:.space 36 /* 18 "internal register" words */
 ExceptFrameSize=.-ExceptFrame
 	.text
 	
-BusErrRtn: /* sets %d6 word to -1 */
-	/* what is this doing to the PC on the stack?
-	   Fsxx xxxx -> F(s & 0b1110)xx xxxx? */
-	moveb %sp@(ExcPC),%d6
-	bclr #0,%d6
-	moveb %d6,%sp@(ExcPC)
+BusErrRtn: /* sets %d6 word to -1, clear data fault to avoid re-execution */
+	moveb %sp@(ExcSSW),%d6 /* lower byte */
+	bclr #ExcInternalDFBit,%d6
+	moveb %d6,%sp@(ExcSSW)
 	movew #-1,%d6
 	rte
 
