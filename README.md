@@ -15,6 +15,12 @@ makes assumptions that it is running on a 68020. I hope to develop a
 68040-compatible declaration ROM, burn it onto a replacement EPROM, and be
 able to run my 8 MB boards in my Quadra computer.
 
+# Prerequisites
+
+This code is Motorola 68k assembly in Gnu AS syntax. The default Makefile
+assumes /usr/m68k-linux-gnu/bin/ contains a working 'as' and 'objcopy' for the
+68k. `apt-get install binutils-m68k-linux-gnu` will provide that on Ubuntu.
+
 # Technical information
 
 The chip on the board is a 32Kx8 NMC27C256Q-200 device. The address lines,
