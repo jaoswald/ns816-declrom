@@ -45,6 +45,8 @@ contains 4 identical copies of the content, but the contents could differ
 * ns816prom.* hold the Rev D image as seen by an EPROM programmer; 4 copies of
   the ROM, address-reversed.
 
-* ns816_quadra.* hold 
+* ns816_quadra.* will hold the modified Quadra-compatible image as seen by
+  the Macintosh.
+
 * ns816_quadra_prom.* hold the modified Quadra-compatible EPROM (address-
-  reversed, duplicated)
+  reversed, duplicated) image generated from ns816_quadra.bin
