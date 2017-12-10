@@ -1,6 +1,6 @@
 /*
 	ns816rom.s 68020 code to reproduce National Semiconductor NS8/16
-	NuBus Memory card declaration ROM.
+	NuBus Memory card declaration ROM Revision D.
 */
 
 	.include "atrap.inc"
