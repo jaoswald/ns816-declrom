@@ -82,13 +82,14 @@ The NuBus behavior of the 68k Macintosh series is described in
 The exception handling process of the 68020 is described in the (formerly
 Motorola) MC68020 Microprocessor User's Manual
 
-https://www.nxp.com/docs/en/data-sheet/MC68020UM.pdf
-https://www.nxp.com/docs/en/reference-manual/MC68040UM.pdf
-https://www.nxp.com/docs/en/reference-manual/MC68040UMAD.pd
+* https://www.nxp.com/docs/en/data-sheet/MC68020UM.pdf
+* https://www.nxp.com/docs/en/reference-manual/MC68040UM.pdf
+* https://www.nxp.com/docs/en/reference-manual/MC68040UMAD.pd
 
 68000--68040 instructions and exception frame formats are documented in the
 68000 Programmer's Reference Manual.
-https://www.nxp.com/docs/en/reference-manual/M68000PRM.pdf
+
+* https://www.nxp.com/docs/en/reference-manual/M68000PRM.pdf
 
 # Files
 
