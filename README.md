@@ -3,16 +3,17 @@ expansion board.
 
 # Background
 
-The Symbolics MacIvory I and II models used dedicated NuBus memory boards as
-system memory. The National Semiconductor NS 8/16 was one such board. These
-boards were also used in the wider Macintosh market as RAM disks. The NS 8/16
-Rev. D board is incompatible with 68040 Quadra Macintosh CPUs, causing them to
-freeze on boot, unless the board includes the daughterboard that brings it to
-its maximum 16 MB capacity. The Rev. F version of this board apparently avoids
-this problem, but reportedly has major hardware changes from the Rev. D. I
-have two Rev. D boards, without daughterboards, and no solid idea whether they
-can be upgraded somehow to Rev. F at this date. National Semiconductor long
-ago lost all institutional knowledge about these boards.
+The [Symbolics](https://en.wikipedia.org/wiki/Symbolics) MacIvory I and II
+models used dedicated NuBus memory boards as system memory. The [National
+Semiconductor NS 8/16](https://books.google.com/books?id=xjAEAAAAMBAJ&lpg=PA21&dq=national%20semiconductor%20steps%20into%20add-on%20mart%20with%20card&pg=PA21#v=onepage&q=national%20semiconductor%20steps%20into%20add-on%20mart%20with%20card&f=false) was one such board. These boards were also used in the
+wider Macintosh market as RAM disks. The NS 8/16 Rev. D board is incompatible
+with 68040 Quadra Macintosh CPUs, causing them to freeze on boot, [unless the
+board includes the daughterboard](http://www.typewritten.org/Projects/Symbolics/463.html#15]
+that brings it to its maximum 16 MB capacity. The Rev. F version of this board
+apparently avoids this problem, but reportedly has major hardware changes from
+the Rev. D. I have two Rev. D boards, without daughterboards, and no solid idea
+whether they can be upgraded somehow to Rev. F at this date. National
+Semiconductor long ago lost all institutional knowledge about these boards.
 
 Luckily, my investigation suggests that the problem is primarily that the ROM
 on the Rev. D makes assumptions that it is running on a 68020. I hope to
