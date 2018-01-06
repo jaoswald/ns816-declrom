@@ -21,13 +21,19 @@
 #include <ios>
 #include <iostream>
 #include <limits>
+#include <string>
 
+#include "absl/strings/str_cat.h"
+#include "gflags/gflags.h"
+#include "glog/logging.h"
 #include "nubus_crc.h"
 
-using std::cerr;
-using std::cout;
 using std::uint32_t;
 
+DEFINE_string(input_file, "",
+	      "File containing binary image of a NuBus declaration ROM.");
+DEFINE_string(output_file, "",
+	      "Binary image to be dumped with proper checksum.");
 namespace {
 
 uint32_t read_32(std::ifstream& file) {
@@ -47,32 +53,32 @@ class NuBusFormatBlock {
  public:
   bool valid(std::streamsize file_length) {
     if (test_pattern_ != kMagicNumber) {
-      cerr << "Test pattern incorrect: " << test_pattern_;
-      // return false;
+      LOG(ERROR) << "Test pattern incorrect: " << test_pattern_;
+      return false;
     }
     if (directory_offset_ & 0xff000000) {
-      cerr << "Directory offset upper byte looks invalid. "
-	   << (directory_offset_ >> 24) << std::endl;
-      // return false;
+      LOG(ERROR) << "Directory offset upper byte looks invalid. "
+		 << (directory_offset_ >> 24);
+      return false;
     }
     // directory offset indicates end - 20 + (signed directory offset)
     // ought to be within rom length of the end.
     if (length_ < kFormatLength) {
-      cerr << "ROM length " << length_ << " too short to hold format block."
-	   << std::endl;
-      // return false;
+      LOG(ERROR) << "ROM length " << length_ <<
+	" too short to hold format block.";
+      return false;
     }
     if (length_ > file_length) {
-      cerr << "rom_length " << length_ << " larger than file "
-	   << file_length;
-      // return false;
+      LOG(ERROR) << "rom_length " << length_ << " larger than file "
+		 << file_length;
+      return false;
     }
     if (reserved_ != 0) {
-      cerr << "Non-zero reserved byte: " << reserved_;
+      LOG(ERROR) << "Non-zero reserved byte: " << reserved_;
     }
     if (format_ != 1) {
-      cerr << "Unexpected format " << format_;
-      // return false;
+      LOG(ERROR) << "Unexpected format " << format_;
+      return false;
     }
     return true;
   }
@@ -80,32 +86,30 @@ class NuBusFormatBlock {
   static NuBusFormatBlock* ReadNuBusFormatBlock(std::ifstream& file,
 						std::streamsize file_length) {
     if (file_length < kFormatLength) {
-      cerr << "Too short to contain a format block " << file_length
-	   << " bytes, less than " << kFormatLength;
+      LOG(ERROR) << "Too short to contain a format block " << file_length
+		 << " bytes, less than " << kFormatLength;
       return nullptr;
     }
     file.seekg(file_length - kFormatLength);
     if (!file) {
-      cerr << "Error seeking format block";
+      LOG(ERROR) << "Error seeking format block";
       return nullptr;
     }
     uint32_t directory_offset = read_32(file);
-    cout << "directory offset: 0x" << std::hex << directory_offset <<
-      std::endl;
+    VLOG(1) << "directory offset: 0x" <<
+      absl::StrCat(absl::Hex(directory_offset));
     uint32_t rom_length = read_32(file);
-    cout << "rom_length: 0x" << std::hex << rom_length << std::endl;
+    VLOG(1) << "rom_length: 0x" << absl::StrCat(absl::Hex(rom_length));
     uint32_t crc = read_32(file);
-    cout << "crc: 0x" << std::hex << crc << std::endl;
+    VLOG(1) << "crc: 0x" << absl::StrCat(absl::Hex(crc));
     char revision_level = file.get();
-    cout << "revision_level: " << std::dec << ((uint) revision_level & 0xff)
-	 << std::endl;
+    VLOG(1) << "revision_level: " << (int) revision_level;
     char format = file.get();
     uint32_t test_pattern = read_32(file);
-    cout << "test_pattern: 0x" << std::hex << test_pattern << std::endl;
+    VLOG(1) << "test_pattern: 0x" << absl::StrCat(absl::Hex(test_pattern));
     char reserved = file.get();
     char byte_lanes = file.get();
-    cout << "byte_lanes: 0x" << std::hex << ((uint) byte_lanes & 0xff)
-	 << std::endl;
+    VLOG(1) << "byte_lanes: 0x" << absl::StrCat(absl::Hex(byte_lanes & 0xff));
 
     return new NuBusFormatBlock(byte_lanes, reserved, test_pattern,
 				format, revision_level, crc, rom_length,
@@ -143,19 +147,18 @@ public:
     NuBusFormatBlock* format = NuBusFormatBlock::ReadNuBusFormatBlock(
 						       file, file_length);
     if (!format || !format->valid(file_length)) {
-      cerr << "Does not appear to be a NuBus declaration ROM." << std::endl;
+      LOG(ERROR) << "Does not appear to be a NuBus declaration ROM.";
       return nullptr;
     }
 
     char* bytes = new char[format->length_];
     if (!bytes) {
-      cerr << "Could not allocate bytes" << std::endl;
+      LOG(ERROR) << "Could not allocate bytes " << format->length_;
       return nullptr;
     }
     file.seekg(file_length - format->length_);
     if (!file) {
-      cerr << "Error seeking contents";
-      return nullptr;
+      LOG(ERROR) << "Error seeking contents";
     }
     file.read(bytes, format->length_);
     return new NuBusImage(format, format->length_, bytes);
@@ -171,20 +174,14 @@ public:
     for (uint32_t i = 0; i < byte_len_; ++i) {
       if (i >= crc_offset && i < crc_offset + 4) {
 	crc.Accumulate(0);
-#if(0)
-	cerr << "i = " << i << " Skipping byte " << std::hex <<
-	  (uint) bytes_[i];
-#endif	
+	VLOG(2) << "i = " << i << " Skipping byte "
+		<< absl::StrCat(absl::Hex(bytes_[i]));
       } else {
 	crc.Accumulate(bytes_[i]);
-#if(0)
-	cerr << "i = " << i << " byte " << std::hex <<
-	  (((uint) bytes_[i]) & 0xff);
-#endif
+	VLOG(2) << "i = " << i << " byte "
+		<< absl::StrCat(absl::Hex(bytes_[i]));
       }
-#if(0)
-      cerr << " after: crc = " << std::hex << crc.CRCValue() << std::endl;;
-#endif
+      VLOG(2) << " after: crc = " << absl::StrCat(absl::Hex(crc.CRCValue()));
     }
     return crc.CRCValue();
   }
@@ -199,36 +196,36 @@ public:
 
 
 int main(int argc, char** argv) {
-  if (argc != 3) {
-    fprintf(stderr, "Command arguments: %s infile outfile\n", argv[0]);
-    return -1;
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
+  google::InitGoogleLogging(argv[0]);
+
+  if (FLAGS_input_file.empty() || FLAGS_output_file.empty()) {
+    LOG(FATAL) << "Must specify --input_file and --output_file.";
   }
 
-  std::ifstream infile(argv[1], std::ios::binary|std::ios::in);
+  const std::string& infile_name = FLAGS_input_file;
+  std::ifstream infile(infile_name, std::ios::binary|std::ios::in);
   if (!infile.is_open()) {
-    cerr << "Error opening " << argv[1] << std::endl;
-    return -1;
+    LOG(FATAL) << "Error opening " << infile_name;
   }  
   infile.ignore(std::numeric_limits<std::streamsize>::max());
   infile.clear();  // reset EOF
   std::streamsize length = infile.gcount();
-  cout << "File length is " << length << " bytes" << std::endl;
+  VLOG(1) << "File length is " << length << " bytes";
 
   NuBusImage* image = NuBusImage::ReadFromFile(infile, length);
   if (!image) {
-    cerr << "Does not appear to be a NuBus declaration ROM." << std::endl;
-    return -1;
+    LOG(FATAL) << "Does not appear to be a NuBus declaration ROM.";
   }
 
-  cerr << "Found an apparently valid ROM." << std::endl;
+  VLOG(2) << "Found an apparently valid ROM.";
 
   uint32_t crc = image->ComputeCRC();
-  cout << "Computed CRC: 0x" << std::hex << crc << std::endl;
+  VLOG(1) << "Computed CRC: 0x" << std::hex << crc;
   
   infile.close();
   if (!infile) {
-    cerr << "Error closing input: " << argv[1] << std::endl;
-    return -1;
+    LOG(FATAL) << "Error closing input: " << infile_name;
   }
 
   return 0;

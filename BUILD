@@ -22,7 +22,10 @@ cc_library(
 cc_binary(
   name = "nubus_checksum",
   srcs = ["nubus_checksum.cc"],
-  deps = [":nubus_crc"]
+  deps = [":nubus_crc",
+       "@com_google_absl//absl/strings",
+       "@com_github_gflags_gflags//:gflags",
+       "@com_github_glog//:glog"]
 )
 
 asm_library(
