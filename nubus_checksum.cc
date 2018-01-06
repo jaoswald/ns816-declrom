@@ -7,7 +7,7 @@
 
    Command line:
 
-     nubus_checksum infile outfile
+     nubus_checksum --input_file infile --output_file outfile
 
    This assumes infile is a raw binary file with a declaration ROM image
    at the end. The program reads the declaration ROM length field and
@@ -199,14 +199,14 @@ int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   google::InitGoogleLogging(argv[0]);
 
-  if (FLAGS_input_file.empty() || FLAGS_output_file.empty()) {
+  const std::string& input_file_name = FLAGS_input_file;
+  if (input_file.empty() || FLAGS_output_file.empty()) {
     LOG(FATAL) << "Must specify --input_file and --output_file.";
   }
 
-  const std::string& infile_name = FLAGS_input_file;
-  std::ifstream infile(infile_name, std::ios::binary|std::ios::in);
+  std::ifstream infile(input_file_name, std::ios::binary|std::ios::in);
   if (!infile.is_open()) {
-    LOG(FATAL) << "Error opening " << infile_name;
+    LOG(FATAL) << "Error opening " << input_file_name;
   }  
   infile.ignore(std::numeric_limits<std::streamsize>::max());
   infile.clear();  // reset EOF
@@ -221,11 +221,11 @@ int main(int argc, char** argv) {
   VLOG(2) << "Found an apparently valid ROM.";
 
   uint32_t crc = image->ComputeCRC();
-  VLOG(1) << "Computed CRC: 0x" << std::hex << crc;
+  LOG(INFO) << "Computed CRC: 0x" << std::hex << crc;
   
   infile.close();
   if (!infile) {
-    LOG(FATAL) << "Error closing input: " << infile_name;
+    LOG(FATAL) << "Error closing input: " << input_file_name;
   }
 
   return 0;
