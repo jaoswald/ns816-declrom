@@ -34,6 +34,12 @@ DEFINE_string(input_file, "",
 	      "File containing binary image of a NuBus declaration ROM.");
 DEFINE_string(output_file, "",
 	      "Binary image to be dumped with proper checksum.");
+DEFINE_int32(output_size, 0,
+	     "If provided, the resulting output file size in bytes. "
+	     "Must be at least the size of the input file. "
+	     "The ROM image will appear at the end of the file, with zero "
+	     "padding at the beginning.");
+
 namespace {
 
 uint32_t read_32(std::ifstream& file) {
