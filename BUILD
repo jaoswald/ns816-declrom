@@ -86,6 +86,36 @@ genrule(
   tools = ["nubus_checksum"],
 )
 
+asm_library(
+    name = "nubus_quadra_obj",
+    srcs = "ns816_quadra.s",
+    listing = 1,
+    includes = ["atrap.inc",
+                "globals.inc",
+                "declrom.inc",],
+    asm_bin = "/usr/m68k-linux-gnu/bin/as",
+    cpu = "68040",
+)
+
+# Without computed checksum.
+genrule(
+  name = "nubus_quadra_bin_raw",
+  srcs = [":nubus_quadra_obj"],
+  outs = ["ns816_quadra_raw.bin"],
+  cmd = ('/usr/m68k-linux-gnu/bin/objcopy $(SRCS) $@ ' +
+         ' --input-target=elf32-m68k --output-target=binary '),
+)
+
+# With computed checksum, padded to 8K.
+genrule(
+  name = "nubus_quadra_bin",
+  srcs = [":nubus_quadra_bin_raw"],
+  outs = ["ns816_quadra.bin"],
+  cmd = "./$(location nubus_checksum) --input_file $(SRCS) " +
+        "--output_file $(OUTS) --output_size 8192 ",
+  tools = ["nubus_checksum"],
+)
+
 cc_binary(
   name = "process_rom",
   srcs = ["process_rom.cc"],
@@ -112,6 +142,19 @@ golden_test(
   golden = "ns816prom_golden.bin"
 )
 
+# Combined, byte-reversed ROM in binary for Quadra.
+genrule(
+  name = "nubus_quadra_prom_bin",
+  srcs = [":nubus_quadra_bin"],
+  outs = ["ns816_quadra_prom.bin"],
+  cmd = "./$(location process_rom) --input_00 $(SRCS) " +
+        "--output_file $(OUTS) --bank_size 8192 ",
+  tools = ["process_rom"],
+)
+
+# TODO(josephoswald): S-record outputs.
+# Quadra PROM for burning, in S-record format.
+
 # TODO(josephoswald):
-#  3. Verification that a "full ROM image" version of nubus_rev_d_bin is
+#  2. Verification that a "full ROM image" version of nubus_rev_d_bin is
 #     identical to raw image extracted from the ROM in a ROM burner.
