@@ -201,6 +201,10 @@ int main(int argc, char** argv) {
 
   const std::string& input_file_name = FLAGS_input_file;
   if (input_file.empty() || FLAGS_output_file.empty()) {
+  int32_t output_length = FLAGS_output_size;
+  if (output_length < 0) {
+    LOG(FATAL) << "--output_size must be positive.";
+  }
     LOG(FATAL) << "Must specify --input_file and --output_file.";
   }
 
@@ -213,6 +217,14 @@ int main(int argc, char** argv) {
   std::streamsize length = infile.gcount();
   VLOG(1) << "File length is " << length << " bytes";
 
+  if (output_length == 0) {
+    output_length = input_length;
+  }
+  if (output_length < input_length) {
+    infile.close();
+    LOG(FATAL) << "--output_size must be at least input_length: "
+	       << input_length;
+  }
   NuBusImage* image = NuBusImage::ReadFromFile(infile, length);
   if (!image) {
     LOG(FATAL) << "Does not appear to be a NuBus declaration ROM.";

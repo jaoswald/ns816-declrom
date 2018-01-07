@@ -48,12 +48,23 @@ genrule(
          ' --input-target=elf32-m68k --output-target=srec '),
 )
 
+# Generated without zero-padding to match the visible ROM length.
 genrule(
-  name = "nubus_rev_d_bin",
+  name = "nubus_rev_d_bin_raw",
   srcs = [":nubus_rev_d_obj"],
-  outs = ["ns816rom.bin"],
+  outs = ["ns816rom_raw.bin"],
   cmd = ('/usr/m68k-linux-gnu/bin/objcopy $(SRCS) $@ ' +
-         ' --input-target=elf32-m68k --output-target=binary '),
+         '--input-target=elf32-m68k --output-target=binary '),
+)
+
+# With (re-)computed checksum, padded to 4K.
+genrule(
+  name = "nubus_rev_d_bin_4k",
+  srcs = [":nubus_rev_d_bin_raw"],
+  outs = ["ns816rom.bin"],
+  cmd = "./$(location nubus_checksum) --input_file $(SRCS) " +
+        "--output_file $(OUTS) --output_size 4096 ",
+  tools = ["nubus_checksum"],
 )
 
 # Verifies that the single copy of the nubus_rev_d_bin code matches what is
@@ -61,7 +72,7 @@ genrule(
 # should not matter).
 golden_test(
   name = "nubus_rev_d_verify",
-  file = ":nubus_rev_d_bin",
+  file = ":nubus_rev_d_bin_4k",
   golden = "Nubus_NS8_16_Memory_Board_RevD.ROM",
 )
 
