@@ -10,20 +10,20 @@
 	/* sResource Directory */
 	.org 0x7dc
 sRsrcDir:
-	sRsrcOffsetEntry 1, sRsrc1
-	sRsrcOffsetEntry 128, sRsrc128
-	sRsrcOffsetEntry 129, sRsrc129
-	sRsrcOffsetEntry 130, sRsrc130
-	sRsrcOffsetEntry 131, sRsrc131	
+	OSLstEntry 1, sRsrc1
+	OSLstEntry 128, sRsrc128
+	OSLstEntry 129, sRsrc129
+	OSLstEntry 130, sRsrc130
+	OSLstEntry 131, sRsrc131
 	.long EndOfList
 
 	
-sRsrc1:	sRsrcOffsetEntry sRsrcType,RsrcType1
-	sRsrcOffsetEntry sRsrcName,RsrcName
-	sRsrcWordEntry BoardId, 0x10f
-	sRsrcOffsetEntry PRAMInitData,PRamInit
-	sRsrcOffsetEntry PrimaryInit,PrimaryInit_
-	sRsrcOffsetEntry VendorInfo,VendorInfoRecord
+sRsrc1:	OSLstEntry sRsrcType,RsrcType1
+	OSLstEntry sRsrcName,RsrcName
+	DatLstEntry BoardId, 0x10f
+	OSLstEntry PRAMInitData,PRamInit
+	OSLstEntry PrimaryInit,PrimaryInit_
+	OSLstEntry VendorInfo,VendorInfoRecord
 	.long EndOfList
 	
 RsrcType1:	.long 0x00010000
@@ -252,57 +252,57 @@ PrimaryInitEnd:
 	/* In NS 8/16 ROM, this is $92c */
 	
 VendorInfoRecord:
-	sRsrcOffsetEntry VendorID,VendorID_
-	sRsrcOffsetEntry RevLevel,RevLevel_
-	sRsrcOffsetEntry PartNum,PartNum_
+	OSLstEntry VendorID,VendorID_
+	OSLstEntry RevLevel,RevLevel_
+	OSLstEntry PartNum,PartNum_
 	.long EndOfList
 VendorID_:	.string "National Semiconductor\0"
 RevLevel_:	.string "Rev. 2.21\0\0"
 PartNum_:	.string "NS8/16\0"
 
 	/* In NS 8/16 ROM $968 */
-sRsrc128:	sRsrcOffsetEntry sRsrcType, RsrcType128
-	sRsrcOffsetEntry sRsrcName, sRsrcName_
-	sRsrcOffsetEntry sRsrcDrvrDir, DrvrDir128
-	sRsrcOffsetEntry sRsrcBootRec, BootSExecBlock
-	sRsrcWordEntry sRsrcHWDevId, 1
-	sRsrcOffsetEntry MinorBaseOS, MinorBase128
-	sRsrcOffsetEntry MinorLength, MinorLength128
-	sRsrcOffsetEntry MajorBaseOS, MajorBase128
-	sRsrcOffsetEntry MajorLength, MajorLength128
+sRsrc128:	OSLstEntry sRsrcType, RsrcType128
+	OSLstEntry sRsrcName, sRsrcName_
+	OSLstEntry sRsrcDrvrDir, DrvrDir128
+	OSLstEntry sRsrcBootRec, BootSExecBlock
+	DatLstEntry sRsrcHWDevId, 1
+	OSLstEntry MinorBaseOS, MinorBase128
+	OSLstEntry MinorLength, MinorLength128
+	OSLstEntry MajorBaseOS, MajorBase128
+	OSLstEntry MajorLength, MajorLength128
 	.long EndOfList
 
-sRsrc129:	sRsrcOffsetEntry sRsrcType, RsrcType128
-	sRsrcOffsetEntry sRsrcName, sRsrcName_
-	sRsrcOffsetEntry sRsrcDrvrDir, DrvrDir128
-	sRsrcOffsetEntry sRsrcBootRec, BootSExecBlock
-	sRsrcWordEntry sRsrcHWDevId, 1
-	sRsrcOffsetEntry MinorBaseOS, MinorBase128
-	sRsrcOffsetEntry MinorLength, MinorLength129
-	sRsrcOffsetEntry MajorBaseOS, MajorBase128
-	sRsrcOffsetEntry MajorLength, MajorLength129
+sRsrc129:	OSLstEntry sRsrcType, RsrcType128
+	OSLstEntry sRsrcName, sRsrcName_
+	OSLstEntry sRsrcDrvrDir, DrvrDir128
+	OSLstEntry sRsrcBootRec, BootSExecBlock
+	DatLstEntry sRsrcHWDevId, 1
+	OSLstEntry MinorBaseOS, MinorBase128
+	OSLstEntry MinorLength, MinorLength129
+	OSLstEntry MajorBaseOS, MajorBase128
+	OSLstEntry MajorLength, MajorLength129
 	.long EndOfList
 
-sRsrc130:	sRsrcOffsetEntry sRsrcType, RsrcType128
-	sRsrcOffsetEntry sRsrcName, sRsrcName_
-	sRsrcOffsetEntry sRsrcDrvrDir, DrvrDir128
-	sRsrcOffsetEntry sRsrcBootRec, BootSExecBlock
-	sRsrcWordEntry sRsrcHWDevId, 1
-	sRsrcOffsetEntry MinorBaseOS, MinorBase128
-	sRsrcOffsetEntry MinorLength, MinorLength130
-	sRsrcOffsetEntry MajorBaseOS, MajorBase128
-	sRsrcOffsetEntry MajorLength, MajorLength130
+sRsrc130:	OSLstEntry sRsrcType, RsrcType128
+	OSLstEntry sRsrcName, sRsrcName_
+	OSLstEntry sRsrcDrvrDir, DrvrDir128
+	OSLstEntry sRsrcBootRec, BootSExecBlock
+	DatLstEntry sRsrcHWDevId, 1
+	OSLstEntry MinorBaseOS, MinorBase128
+	OSLstEntry MinorLength, MinorLength130
+	OSLstEntry MajorBaseOS, MajorBase128
+	OSLstEntry MajorLength, MajorLength130
 	.long EndOfList
 
-sRsrc131:	sRsrcOffsetEntry sRsrcType, RsrcType128
-	sRsrcOffsetEntry sRsrcName, sRsrcName_
-	sRsrcOffsetEntry sRsrcDrvrDir, DrvrDir128
-	sRsrcOffsetEntry sRsrcBootRec, BootSExecBlock
-	sRsrcWordEntry sRsrcHWDevId, 1
-	sRsrcOffsetEntry MinorBaseOS, MinorBase128
-	sRsrcOffsetEntry MinorLength, MinorLength131
-	sRsrcOffsetEntry MajorBaseOS, MajorBase128
-	sRsrcOffsetEntry MajorLength, MajorLength131
+sRsrc131:	OSLstEntry sRsrcType, RsrcType128
+	OSLstEntry sRsrcName, sRsrcName_
+	OSLstEntry sRsrcDrvrDir, DrvrDir128
+	OSLstEntry sRsrcBootRec, BootSExecBlock
+	DatLstEntry sRsrcHWDevId, 1
+	OSLstEntry MinorBaseOS, MinorBase128
+	OSLstEntry MinorLength, MinorLength131
+	OSLstEntry MajorBaseOS, MajorBase128
+	OSLstEntry MajorLength, MajorLength131
 	.long EndOfList
 
 	/* NS 8/16 ROM $a08 */
@@ -463,7 +463,7 @@ BootSExecBlockEnd:
 
 	/* NS 8/16 ROM $ada */
 DrvrDir128:
-	sRsrcOffsetEntry cpu68020, DrvrSBlock
+	OSLstEntry cpu68020, DrvrSBlock
 	.long EndOfList
 DrvrSBlock:	.long DrvrSBlockEnd-.	/* $4e2 */
 
@@ -1109,7 +1109,7 @@ MajorLength131:	.long 0x01000000
 
 	/* Declaration ROM directory at end */
 DeclROMDir:
-	sRsrcOffsetEntry 0, sRsrcDir
+	OSLstEntry 0, sRsrcDir
 
 	.long DeclRomEnd-sRsrcDir /* Length should be 0x824 */
 DeclROMCRC:	.long 0x7901e271 /* TODO: calculate this */

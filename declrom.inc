@@ -1,10 +1,10 @@
 /* Gnu AS macros for Classic Macintosh NuBus Declaration ROMs */
 	
 	/* Macros for sResourceEntries */
-	.macro sRsrcOffsetEntry entry_type, label
+	.macro OSLstEntry entry_type, label
 	.long (\entry_type<<24) + ((\label-.) & 0xffffff)
 	.endm
-	.macro sRsrcWordEntry entry_type, word_data
+	.macro DatLstEntry entry_type, word_data
 	.word \entry_type<<8
 	.word \word_data & 0xffff
 	.endm
