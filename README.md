@@ -103,8 +103,10 @@ Motorola) MC68020 Microprocessor User's Manual
   Macintosh: one 8K image, in proper order, as observed on a Macintosh IIfx
   with the W1 jumper absent and no daughter board.
 
-* ns816prom.* hold the Rev D image as seen by an EPROM programmer; 4 copies of
-  the declaration ROM contents, address-reversed.
+* ns816prom.* hold the assembled Rev D image as seen by an EPROM programmer.
+  4 copies of the declaration ROM contents, address-reversed.
+
+* ns816prom_golden.* hold the images as read directly from the factory ROM.
 
 * ns816_quadra.* will hold the modified Quadra-compatible image as seen by
   the Macintosh.
