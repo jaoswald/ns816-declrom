@@ -3,17 +3,22 @@
    Computes and inserts a 32-bit "CRC" checksum for a Macintosh NuBus
    declaration ROM. It is actually not a standard CRC polynomial, but a simpler
    checksum, described in "Designing Cards and Drivers for the Macintosh
-   Family."
+   Family." Also offsets the input file to appear at the end of a fixed-size
+   output file.
 
    Command line:
 
      nubus_checksum --input_file infile --output_file outfile
+        [--output_size N]
 
    This assumes infile is a raw binary file with a declaration ROM image
    at the end. The program reads the declaration ROM length field and
    magic number field as an integrity check, then computes the checksum
    and inserts it into the CRC field of outfile.
 
+   If output_size is omitted, it defaults to the input file size. Otherwise,
+   it must be greater than or equal to the input file size, and zeros are
+   added to the beginning of the output file.
 */
 
 #include <cstdint>
@@ -51,6 +56,15 @@ uint32_t read_32(std::ifstream& file) {
   result |= word[2] << 8;
   result |= word[3];
   return result;
+}
+
+void write_32(std::ofstream& file, const uint32_t value) {
+  unsigned char word[4];
+  word[0] = (value >> 24) & 0xff;
+  word[1] = (value >> 16) & 0xff;
+  word[2] = (value >> 8) & 0xff;
+  word[3] = value & 0xff;
+  file.write(reinterpret_cast<char*>(word), 4);
 }
 
 }  // namespace
@@ -122,6 +136,19 @@ class NuBusFormatBlock {
 				directory_offset);
   }
 
+  void WriteToFile(std::ofstream& file,
+		   std::streamsize file_length) {
+    file.seekp(file_length - kFormatLength);
+    write_32(file, directory_offset_);
+    write_32(file, length_);
+    write_32(file, crc_);
+    file.put(format_);
+    file.put(revision_level_);
+    write_32(file, test_pattern_);
+    file.put(reserved_);
+    file.put(byte_lanes_);
+  }
+
   static const int32_t kMagicNumber = 0x5a932bc7;
   static const int32_t kFormatLength = 20;
 
@@ -157,7 +184,7 @@ public:
       return nullptr;
     }
 
-    char* bytes = new char[format->length_];
+    char* bytes = new char[format->length_]();
     if (!bytes) {
       LOG(ERROR) << "Could not allocate bytes " << format->length_;
       return nullptr;
@@ -168,6 +195,42 @@ public:
     }
     file.read(bytes, format->length_);
     return new NuBusImage(format, format->length_, bytes);
+  }
+
+  void UpdateCRC(const uint32_t new_crc) {
+    format_->crc_ = new_crc;
+  }
+
+  bool WriteToFile(std::ofstream& file, std::streamsize file_length) {
+    const std::streamsize zero_length = file_length - format_->length_;
+    if (zero_length < 0) {
+      LOG(ERROR) << "file_length " << file_length << " insufficient for "
+		 << format_->length_ << " bytes.";
+      return false;
+    }
+    LOG(INFO) << "Write out zero bytes at beginning "
+	      << zero_length;
+    char* zeros = new char[file_length - format_->length_]();
+    if (!zeros) {
+      LOG(ERROR) << "Failed to allocate " << zero_length;
+      return false;
+    }
+    file.write(zeros, zero_length);
+    if (!file) {
+      LOG(ERROR) << "Error writing " << zero_length << " zeros.";
+      return false;
+    }
+    const std::streamsize content_length =
+      format_->length_ - NuBusFormatBlock::kFormatLength;
+    if (content_length > byte_len_) {
+      LOG(ERROR) << "Expected at least " << content_length
+		 << " bytes but only have " << byte_len_;
+      return false;
+    }
+
+    file.write(bytes_, content_length);
+    format_->WriteToFile(file, file_length);
+    return file.good();
   }
 
   NuBusFormatBlock* format_;
@@ -206,11 +269,12 @@ int main(int argc, char** argv) {
   google::InitGoogleLogging(argv[0]);
 
   const std::string& input_file_name = FLAGS_input_file;
-  if (input_file.empty() || FLAGS_output_file.empty()) {
+  const std::string& output_file_name = FLAGS_output_file;
   int32_t output_length = FLAGS_output_size;
   if (output_length < 0) {
     LOG(FATAL) << "--output_size must be positive.";
   }
+  if (input_file_name.empty() || output_file_name.empty()) {
     LOG(FATAL) << "Must specify --input_file and --output_file.";
   }
 
@@ -220,8 +284,8 @@ int main(int argc, char** argv) {
   }  
   infile.ignore(std::numeric_limits<std::streamsize>::max());
   infile.clear();  // reset EOF
-  std::streamsize length = infile.gcount();
-  VLOG(1) << "File length is " << length << " bytes";
+  std::streamsize input_length = infile.gcount();
+  VLOG(1) << "Input file length is " << input_length << " bytes";
 
   if (output_length == 0) {
     output_length = input_length;
@@ -231,20 +295,35 @@ int main(int argc, char** argv) {
     LOG(FATAL) << "--output_size must be at least input_length: "
 	       << input_length;
   }
-  NuBusImage* image = NuBusImage::ReadFromFile(infile, length);
+  NuBusImage* image = NuBusImage::ReadFromFile(infile, input_length);
   if (!image) {
     LOG(FATAL) << "Does not appear to be a NuBus declaration ROM.";
   }
 
-  VLOG(2) << "Found an apparently valid ROM.";
+  VLOG(1) << "Found an apparently valid ROM.";
 
   uint32_t crc = image->ComputeCRC();
   LOG(INFO) << "Computed CRC: 0x" << std::hex << crc;
+
+  // Inserting CRC
+  image->UpdateCRC(crc);
+  std::ofstream outfile(output_file_name,
+			std::ios::binary|std::ios::out|std::ios::trunc);
+  if (!outfile.is_open()) {
+    LOG(FATAL) << "Error opening output " << output_file_name;
+  }
+  if (!image->WriteToFile(outfile, output_length)) {
+    LOG(ERROR) << "Error writing output.";
+  }
   
   infile.close();
+  outfile.close();
+
   if (!infile) {
     LOG(FATAL) << "Error closing input: " << input_file_name;
   }
-
+  if (!outfile) {
+    LOG(FATAL) << "Error closing output: " << output_file_name;
+  }
   return 0;
 }
