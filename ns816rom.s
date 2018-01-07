@@ -8,7 +8,7 @@
 	.include "declrom.inc"
 
 	/* sResource Directory */
-	.org 0x7dc
+	/* .org 0x7dc */
 sRsrcDir:
 	OSLstEntry 1, sRsrc1
 	OSLstEntry 128, sRsrc128
