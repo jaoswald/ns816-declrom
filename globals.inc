@@ -16,3 +16,10 @@ Lo3Bytes=0x031A /* long  holds the constant $00FFFFFF */
 
 KeyMap=0x0174  /* 8 bytes: bitmap of the keyboard */
 KeypadMap=0x017C /* long  bitmap for numeric keypad (uses 18 bits) */
+
+CPUFlag=0x12F  /* one byte: which CPU is determined at startup */
+cpu68000=0
+cpu68010=1
+cpu68020=2
+cpu68030=3
+cpu68040=4

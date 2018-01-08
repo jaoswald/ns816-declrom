@@ -45,8 +45,6 @@ RevLevel=3
 PartNum=4
 Date=5
 
-cpu68020=2
-
 /* Definition of seBlock: SlotEntry block */
 /* On entry to PrimaryInit, A0 points to an seBlock */
 	.struct 0
