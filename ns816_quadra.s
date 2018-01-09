@@ -48,8 +48,8 @@ PRamInit:	.long 12 /* data length */
 	CPU type byte is checked except to verify 68020 compatibility.
 	That is, I cannot stuff multiple PrimaryInit records and have
 	the SlotManager choose the closest match for a Quadra.
-	I will try to use the global CPUFlag value at $12F to figure out
-	which type of machine I am on. */
+	If necessary, the global CPUFlag value at $12F should hold a code to identify
+	which CPU is being used. */
 	
 PrimaryInit_:	.long PrimaryInitEnd-.
 	.byte 2 /* Revision 2 */
@@ -120,8 +120,12 @@ L8BC:	movel %sp@+,%d0
 	/* d0, d6 contain previous MMUMode, d7 slot byte, a3&a0 at seblock */
 L8CC:	movew %sr,%sp@-  /* save interrupt mask */
 	oriw #0x700,%sr  /* disable interrupts */
+	/* save original bus error vector */
+	movel BusErrVector,%a0
+	movel %a0,OrigBusErrVector
+	movel %a0,%sp@- /* and on stack */
 	lea %pc@(BusErrRtn),%a0
-	movel BusErrVector,%sp@-
+TestReads:
 	movel %a0,BusErrVector
 	rorw #4,%d7
 	swap %d7
@@ -134,14 +138,15 @@ L8CC:	movew %sr,%sp@-  /* save interrupt mask */
 	addal %d7,%a1
 	movel %a1@,%d5 /* read from card RAM */
 	tstw %d6  /* d6 munged to indicate bus error? */
-	bnes L900
+	bnes FoundLimit
 	addqw #4,%d1
 	dbra %d0,.L3
-L900:	movel %sp@+,BusErrVector
+FoundLimit:
+	movel %sp@+,BusErrVector
 	movew %sp@+,%sr /* restore interrupt mask */
 	movew %d1,%d7
 	rts
-
+OrigBusErrVector:	.space 4
 /* Note: the PrimaryInit code is copied into RAM for execution, because the
    NuBus declaration ROM is likely not 32 bits wide. */
 /* Handler for Bus Error; looks like it assumes the exception is
@@ -154,7 +159,7 @@ L900:	movel %sp@+,BusErrVector
    stack frame. I guess that works? */
 
 	.struct 0
-ExceptFrame:
+ExceptBFrame:
 ExcSReg:	.space 2 /* saved status register */
 ExcPC:		.space 4 /* program counter */
 ExcFrameType:	.space 1 /* type byte, top 4 bits is $B, lower is top of */
@@ -192,16 +197,77 @@ ExcDataInBuffer:.space 4 /* "Data Input Buffer" */
 ExcInternalReg5:.space 6 /* three "internal register" words */
 ExcVersionNum:	.space 2 /* 4 bit version # in high nibble, rest internal */
 ExcInternalReg6:.space 36 /* 18 "internal register" words */
-ExceptFrameSize=.-ExceptFrame
+ExceptBFrameSize=.-ExceptBFrame
 	.text
 	
-BusErrRtn: /* sets %d6 word to -1, clear data fault to avoid re-execution */
+BusErrRtn:
+	movb %sp@(ExcFrameType,%d6
+	cmpib #$b,%d6
+	bnes NotBFrame
+	/* sets %d6 word to -1, clear data fault to avoid re-execution */
 	moveb %sp@(ExcSSW),%d6 /* lower byte */
 	bclr #ExcInternalDFBit,%d6
 	moveb %d6,%sp@(ExcSSW)
 	movew #-1,%d6
 	rte
 
+	/* Exception frame format $7: 68040 Access Error */
+	/* M68040UM Table 8-6 read access will
+	   have SSW_RW = 1 WB3S3V will indicate WB3D "easy cleanup data written"
+	.struct 0
+Except7Frame:
+ExcSReg:	.space 2 /* saved status register */
+ExcPC:		.space 4 /* program counter */
+ExcFrameType:	.space 1 /* type byte, top 4 bits is $B, lower is top of */
+        /* vector offset */
+ExcVectorOffset:	.space 1 /* rest of vector offset */
+	/* here it begins to differ from $B */
+Exc7EA:	 .space 4 /* Effective Address */
+Exc7SSW: .space 2 /* Special Status Word */
+/* special status word M68040UM 8.4.6.2
+   bit 15 14 13 12 11 10  9  8     7  6  5  43  210
+       CP CU CT CM MA ATC LK RW    X  SIZE  TT  TM
+	
+CP: Continuation of FP Post-Instruction Exception pending
+CU: Continuation of Unimplemented FP Instruction Exception pending
+CT: Continuation of Trace exception pending.
+CM: Continutation of MOVEM instruction execution pending
+MA: Misaligned access (set if ATC fault for second-page access)
+ATC: set for nonresident address table entry
+LK: Lock, set if fault occured in read-modify-write.
+RW: set if fault on a read, cleared otherwise
+X:  undefined
+SIZE: transfer size
+TT: transfer type (TT1,TT0 signal encodings)
+TM: transfer modifier (TM2--TM0 signal encodings) */
+/* Write-back status 8.4.6.3
+   7  65   43  210
+   V  SIZE TT  TM */
+	
+Exc7WB3S: .space 2 /* Writeback 3 status */
+Exc7WB2S: .space 2 /* Writeback 2 status */
+Exc7WB1S: .space 2 /* Writeback 1 status */
+Exc7FaultA: .space 4 /* Fault Address (FA) */
+Exc7WB3A:   .space 4 /* Writeback 3 address */
+Exc7WB3D:   .space 4 /* Writeback 3 data */
+Exc7WB2A:   .space 4 /* Writeback 2 address */
+Exc7WB2D:   .space 4 /* Writeback 2 data */
+Exc7WB1A:   .space 4 /* Writeback 1 address */
+Exc7WB1D:   .space 4 /* Writeback 1 data/push data lw0 */
+Exc7PD1:    .space 4 /* Push data LW 1 (PD1) */
+Exc7PD2:    .space 4 /* Push data LW 1 (PD2) */
+Exc7PD3:    .space 4 /* Push data LW 1 (PD3) */
+Except7FrameSize=.-Except7Frame
+	.text
+
+NotBFrame:
+	cmpib #$7,%d6
+	bnes CantHandle
+	/* ssw-rw bit should be 1 */
+CantHandle:
+	clrw %d6
+	jmp @OrigBusError
+	
 BankAddresses: .long 0
 	.long 0x400000
 	.long 0x800000
