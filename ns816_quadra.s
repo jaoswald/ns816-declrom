@@ -8,6 +8,12 @@
 	.include "globals.inc"
 	.include "declrom.inc"
 
+	/* Conditional assembly directives */
+	/* HardCodeCapacity: if non-zero, do not assemble bus-probing code,
+	   but report the value as the number of megabytes of installed
+	   memory to report. */
+	HardCodeCapacity=8
+
 	/* sResource Directory */
 sRsrcDir:
 	OSLstEntry 1, sRsrc1
@@ -48,8 +54,8 @@ PRamInit:	.long 12 /* data length */
 	CPU type byte is checked except to verify 68020 compatibility.
 	That is, I cannot stuff multiple PrimaryInit records and have
 	the SlotManager choose the closest match for a Quadra.
-	If necessary, the global CPUFlag value at $12F should hold a code to identify
-	which CPU is being used. */
+	If necessary, the global CPUFlag value at $12F should hold a code to
+	identify which CPU is being used. */
 	
 PrimaryInit_:	.long PrimaryInitEnd-.
 	.byte 2 /* Revision 2 */
@@ -102,7 +108,7 @@ L89E:
 	_SwapMMUMode
 	moveb %d0,%d6
 	/* d0, d6 contain previous MMUMode, d7 slot byte, a3&a0 at seblock */
-	bsrs L8CC
+	bsrs ProbeCapacity
 	moveb %d6,%d0
 	_SwapMMUMode
 	movew %d7,%d0  /* d0 word contains slot byte */
@@ -117,8 +123,18 @@ L8BC:	movel %sp@+,%d0
 	moveal %d0,%a0
 	jmp %a0@
 	
-	/* d0, d6 contain previous MMUMode, d7 slot byte, a3&a0 at seblock */
-L8CC:	movew %sr,%sp@-  /* save interrupt mask */
+	/* ProbeCapacity:
+	   On entry, %d7 contains "slot byte"
+	   On exit, %d7 contains number of megabytes installed.
+	   Destroys, d0,d1,d6,a0,a1,a2 */
+
+ProbeCapacity:
+	.ifne HardCodeCapacity
+	movew #HardCodeCapacity, %d7
+	rts
+	.else
+
+	movew %sr,%sp@-  /* save interrupt mask */
 	oriw #0x700,%sr  /* disable interrupts */
 	/* save original bus error vector */
 	movel BusErrVector,%a0
@@ -273,6 +289,8 @@ BankAddresses: .long 0
 	.long 0x800000
 	.long 0xc00000
 PrimaryInitEnd:
+
+	.endif /* HardCodeCapacity */
 
 	/* In NS 8/16 ROM, this is $92c */
 	
