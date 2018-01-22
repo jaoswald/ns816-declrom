@@ -93,7 +93,7 @@ L89E:
 	_SwapMMUMode
 	moveb %d0,%d6
 	/* d0, d6 contain previous MMUMode, d7 slot byte, a3&a0 at seblock */
-	bsrs L8CC
+	bsrs ProbeCapacity
 	moveb %d6,%d0
 	_SwapMMUMode
 	movew %d7,%d0  /* d0 word contains slot byte */
@@ -107,9 +107,13 @@ L8BC:	movel %sp@+,%d0
 .LNoStrip:
 	moveal %d0,%a0
 	jmp %a0@
-	
-	/* d0, d6 contain previous MMUMode, d7 slot byte, a3&a0 at seblock */
-L8CC:	movew %sr,%sp@-  /* save interrupt mask */
+
+	/* ProbeCapacity:
+	   On entry, %d7 contains "slot byte"
+	   On exit, %d7 contains number of megabytes installed.
+	   Destroys, d0,d1,d6,a0,a1,a2 */
+ProbeCapacity:
+	movew %sr,%sp@-  /* save interrupt mask */
 	oriw #0x700,%sr  /* disable interrupts */
 	lea %pc@(BusErrRtn),%a0
 	movel BusErrVector,%sp@-
@@ -125,7 +129,7 @@ L8CC:	movew %sr,%sp@-  /* save interrupt mask */
 	addal %d7,%a1
 	movel %a1@,%d5 /* read from card RAM */
 	tstw %d6  /* d6 munged to indicate bus error? */
-	bnes L900
+	bnes L900 /* yes */
 	addqw #4,%d1
 	dbra %d0,.L3
 L900:	movel %sp@+,BusErrVector
