@@ -39,11 +39,12 @@ def _asm(ctx):
   args.add(ctx.outputs.out.path)
 
   inputs = ctx.attr.srcs.files
+  other_inputs = []
   include_dirs = []
   for target in ctx.attr.includes:
-    inputs = inputs + target.files
+    other_inputs.append(target.files)
     # TODO(josephoswald): de-duplicate
-    for f in target.files:
+    for f in target.files.to_list():
       include_dirs.append(f.dirname)
 
   for d in include_dirs:
@@ -65,7 +66,7 @@ def _asm(ctx):
     redirection = command_redirect)
   ctx.actions.run_shell(
     outputs = outs,
-    inputs = inputs,
+    inputs = depset(inputs.to_list(), transitive=other_inputs),
     arguments = [args],
     command = command_line,
     mnemonic = "Assemble")
