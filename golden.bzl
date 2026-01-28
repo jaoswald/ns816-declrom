@@ -9,24 +9,29 @@
 # an executable.
 #
 def _diff_file(f, golden):
-  """Return shell command for comparing file 'f' to file 'golden'."""
-  return """
+    """Return shell command for comparing file 'f' to file 'golden'."""
+    return """
   echo Comparing {file} to {golden}...
   diff --report-identical-files {file} {golden}
-  """.format(file=f.short_path, golden=golden.short_path)
+  """.format(file = f.short_path, golden = golden.short_path)
 
 def _impl(ctx):
-  script = _diff_file(ctx.file.file, ctx.file.golden)
-  ctx.actions.write(
-    output = ctx.outputs.executable,
-    content = script)
-  runfiles = ctx.runfiles(files=[ctx.file.file, ctx.file.golden])
-  return DefaultInfo(executable=ctx.outputs.executable,
-                     runfiles=runfiles)
+    script = _diff_file(ctx.file.file, ctx.file.golden)
+    ctx.actions.write(
+        output = ctx.outputs.executable,
+        content = script,
+    )
+    runfiles = ctx.runfiles(files = [ctx.file.file, ctx.file.golden])
+    return DefaultInfo(
+        executable = ctx.outputs.executable,
+        runfiles = runfiles,
+    )
 
 golden_test = rule(
-  implementation=_impl,
-  attrs={"file": attr.label(mandatory=True, allow_single_file=True),
-         "golden": attr.label(mandatory=True, allow_single_file=True)},
-  test=True,
+    implementation = _impl,
+    attrs = {
+        "file": attr.label(mandatory = True, allow_single_file = True),
+        "golden": attr.label(mandatory = True, allow_single_file = True),
+    },
+    test = True,
 )
