@@ -28,22 +28,24 @@
 #include <limits>
 #include <string>
 
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
+#include "absl/log/log.h"
+#include "absl/log/initialize.h"
 #include "absl/strings/str_cat.h"
-#include "gflags/gflags.h"
-#include "glog/logging.h"
 #include "nubus_crc.h"
 
 using std::uint32_t;
+using std::string;
 
-DEFINE_string(input_file, "",
-	      "File containing binary image of a NuBus declaration ROM.");
-DEFINE_string(output_file, "",
-	      "Binary image to be dumped with proper checksum.");
-DEFINE_int32(output_size, 0,
-	     "If provided, the resulting output file size in bytes. "
-	     "Must be at least the size of the input file. "
-	     "The ROM image will appear at the end of the file, with zero "
-	     "padding at the beginning.");
+ABSL_FLAG(string, input_file, "",
+          "File containing binary image of a NuBus declaration ROM.");
+ABSL_FLAG(string, output_file, "",
+          "Binary image to be dumped with proper checksum.");
+ABSL_FLAG(int32_t, output_size, 0,
+          "If provided, the resulting output file size in bytes. Must be at "
+          "least the size of the input file. The ROM image will appear at the "
+          "end of the file, with zero padding at the beginning.");
 
 namespace {
 
@@ -265,12 +267,12 @@ public:
 
 
 int main(int argc, char** argv) {
-  gflags::ParseCommandLineFlags(&argc, &argv, true);
-  google::InitGoogleLogging(argv[0]);
+  absl::ParseCommandLine(argc, argv);
+  absl::InitializeLog();
 
-  const std::string& input_file_name = FLAGS_input_file;
-  const std::string& output_file_name = FLAGS_output_file;
-  int32_t output_length = FLAGS_output_size;
+  const std::string& input_file_name = absl::GetFlag(FLAGS_input_file);
+  const std::string& output_file_name = absl::GetFlag(FLAGS_output_file);
+  int32_t output_length = absl::GetFlag(FLAGS_output_size);
   if (output_length < 0) {
     LOG(FATAL) << "--output_size must be positive.";
   }

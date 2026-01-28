@@ -29,16 +29,21 @@
 #include <string>
 #include <fstream>
 #include <iostream>
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
+#include "absl/log/check.h"
+#include "absl/log/initialize.h"
+#include "absl/log/log.h"
 
-#include "gflags/gflags.h"
-#include "glog/logging.h"
+using std::int32_t;
+using std::string;
 
-DEFINE_string(output_file, "", "Output file for raw binary output.");
-DEFINE_int32(bank_size, 8192, "Size of ROM bank in bytes.");
-DEFINE_string(input_00, "", "Input file for high-order address bits 00");
-DEFINE_string(input_01, "", "Input file for high-order address bits 01");
-DEFINE_string(input_10, "", "Input file for high-order address bits 10");
-DEFINE_string(input_11, "", "Input file for high-order address bits 11");
+ABSL_FLAG(string, output_file, "", "Output file for raw binary output.");
+ABSL_FLAG(int32_t, bank_size, 8192, "Size of ROM bank in bytes.");
+ABSL_FLAG(string, input_00, "", "Input file for high-order address bits 00");
+ABSL_FLAG(string, input_01, "", "Input file for high-order address bits 01");
+ABSL_FLAG(string, input_10, "", "Input file for high-order address bits 10");
+ABSL_FLAG(string, input_11, "", "Input file for high-order address bits 11");
 
 namespace {
 
@@ -80,31 +85,37 @@ void ReverseBank(char* buf, const int32_t bank_size) {
 } // namespace
 
 int main(int argc, char** argv) {
-  gflags::ParseCommandLineFlags(&argc, &argv, true);
-  google::InitGoogleLogging(argv[0]);
+  absl::ParseCommandLine(argc, argv);
+  absl::InitializeLog();
 
-  const std::string& output_name = FLAGS_output_file;
+  const std::string& output_name = absl::GetFlag(FLAGS_output_file);
   if (output_name.empty()) {
     LOG(FATAL) << "Must specify --output_file.";
   }
-  const std::string& input_00_name = FLAGS_input_00;
+  const std::string& input_00_name = absl::GetFlag(FLAGS_input_00);
   if (input_00_name.empty()) {
     LOG(FATAL) << "Must specify --input_00 input file.";
   }
-  int32_t bank_size = FLAGS_bank_size;
+  int32_t bank_size = absl::GetFlag(FLAGS_bank_size);
   if (bank_size <= 0) {
     LOG(FATAL) << "--bank_size must be positive.";
   }
 
-  if(FLAGS_input_01.empty()) { LOG(INFO) << "Duplicating input_00 for 01"; }
-  if(FLAGS_input_10.empty()) { LOG(INFO) << "Duplicating input_00 for 10"; }
-  if(FLAGS_input_11.empty()) { LOG(INFO) << "Duplicating input_00 for 11"; }
-  const std::string& input_01_name = FLAGS_input_01.empty() ? input_00_name :
-    FLAGS_input_01;
-  const std::string& input_10_name = FLAGS_input_10.empty() ? input_00_name :
-    FLAGS_input_10;
-  const std::string& input_11_name = FLAGS_input_11.empty() ? input_00_name :
-    FLAGS_input_11;
+  std::string input_01_name = absl::GetFlag(FLAGS_input_01);
+  std::string input_10_name = absl::GetFlag(FLAGS_input_10);
+  std::string input_11_name = absl::GetFlag(FLAGS_input_11);
+  if (input_01_name.empty()) {
+    LOG(INFO) << "Duplicating input_00 for 01";
+    input_01_name = input_00_name;
+  }
+  if (input_10_name.empty()) {
+    LOG(INFO) << "Duplicating input_00 for 10";
+    input_10_name = input_00_name;
+  }
+  if (input_11_name.empty()) {
+    LOG(INFO) << "Duplicating input_00 for 11";
+    input_11_name = input_00_name;
+  }
 
   char* bank_buffer = new char[bank_size]();
   CHECK_NE(static_cast<char*>(nullptr), bank_buffer)

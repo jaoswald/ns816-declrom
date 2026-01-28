@@ -26,9 +26,12 @@ cc_binary(
   name = "nubus_checksum",
   srcs = ["nubus_checksum.cc"],
   deps = [":nubus_crc",
-       "@abseil-cpp//absl/strings",
-       "@gflags//:gflags",
-       "@glog//:glog"]
+        "@abseil-cpp//absl/strings",
+        "@abseil-cpp//absl/flags:flag",
+        "@abseil-cpp//absl/flags:parse",
+        "@abseil-cpp//absl/log:initialize",
+        "@abseil-cpp//absl/log:log",
+    ],
 )
 
 asm_library(
@@ -123,8 +126,12 @@ cc_binary(
   name = "process_rom",
   srcs = ["process_rom.cc"],
   deps = [
-       "@gflags//:gflags",
-       "@glog//:glog"]
+        "@abseil-cpp//absl/flags:flag",
+        "@abseil-cpp//absl/flags:parse",
+        "@abseil-cpp//absl/log:check",
+        "@abseil-cpp//absl/log:initialize",
+        "@abseil-cpp//absl/log:log",
+    ],
 )
 
 # Combined, byte-reversed ROM in binary.
