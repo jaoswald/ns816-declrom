@@ -26,9 +26,11 @@
      [--input_11=<binary input for A14=1, A13=1>]
 */
 
-#include <string>
+#include <cstdint>
 #include <fstream>
 #include <iostream>
+#include <string>
+
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/log/check.h"
@@ -52,17 +54,17 @@ using std::string;
 /* returns false if input file does not exactly contain bank_size bytes or
    cannot be read. */
 bool ReadBank(const string& file_name, char* buf, const int32_t bank_size) {
-  std::ifstream infile(file_name, std::ios::binary|std::ios::in);
+  std::ifstream infile(file_name, std::ios::binary | std::ios::in);
   if (!infile.is_open()) {
     LOG(ERROR) << "Error opening " << file_name;
     return false;
-  }  
+  }
   infile.read(buf, bank_size);
   const std::streamsize bytes_read = infile.gcount();
   bool ok = true;
   if (bytes_read != bank_size) {
     LOG(ERROR) << "Read " << bytes_read << " bytes, expected bank_size "
-	       << bank_size;
+               << bank_size;
     ok = false;
   }
   infile.close();
@@ -82,7 +84,7 @@ void ReverseBank(char* buf, const int32_t bank_size) {
   }
 }
 
-} // namespace
+}  // namespace
 
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
@@ -119,25 +121,25 @@ int main(int argc, char** argv) {
 
   char* bank_buffer = new char[bank_size]();
   CHECK_NE(static_cast<char*>(nullptr), bank_buffer)
-    << "Allocating " << bank_size;
+      << "Allocating " << bank_size;
   std::ofstream outfile(output_name,
-			std::ios::binary|std::ios::out|std::ios::trunc);
+                        std::ios::binary | std::ios::out | std::ios::trunc);
   if (!outfile.is_open()) {
     LOG(FATAL) << "Could not open " << output_name << " for output";
   }
 
   bool ok = true;
-#define PROCESS_BANK(name)				\
-  ok &= ReadBank(name, bank_buffer, bank_size);		\
-  if (!ok) {						\
-    outfile.close();					\
-    LOG(FATAL) << "Reading " << name;			\
-  }							\
-  ReverseBank(bank_buffer, bank_size);			\
-  if (!outfile.write(bank_buffer, bank_size)) {		\
-    LOG(FATAL) << "Writing output for " << name;	\
-  }							\
-  
+#define PROCESS_BANK(name)                       \
+  ok &= ReadBank(name, bank_buffer, bank_size);  \
+  if (!ok) {                                     \
+    outfile.close();                             \
+    LOG(FATAL) << "Reading " << name;            \
+  }                                              \
+  ReverseBank(bank_buffer, bank_size);           \
+  if (!outfile.write(bank_buffer, bank_size)) {  \
+    LOG(FATAL) << "Writing output for " << name; \
+  }
+
   // order 00, 01, 10, 11 is not reversed.
   PROCESS_BANK(input_00_name);
   PROCESS_BANK(input_01_name);
@@ -149,4 +151,3 @@ int main(int argc, char** argv) {
   }
   return 0;
 }
-
