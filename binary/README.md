@@ -3,7 +3,3 @@
 * [ns816_harcode_8MB_prom.bin](./ns816_harcode_8MB_prom.bin) is a PROM that
   hard-codes an 8MB memory capacity, bypassing all probing, avoiding CPU
   incompatibility. NuBus Checksum 0xbe4ea8f6
-
-
-
-  
